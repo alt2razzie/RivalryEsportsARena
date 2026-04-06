@@ -1,0 +1,104 @@
+/* --- GLOBAL VARIABLES & THEME --- */
+:root {
+    --bg-dark: #0B1120;
+    --bg-card: #1E293B;
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --accent-red: #EF4444;
+    --accent-red-hover: #DC2626;
+    --accent-green: #10B981;
+    --border-color: #334155;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0; padding: 0;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh;
+}
+
+/* --- VIEW CONTROLLER (SPA LOGIC) --- */
+.view-section {
+    width: 100%;
+    display: flex; flex-direction: column; align-items: center;
+    animation: fadeIn 0.4s ease;
+}
+.hidden { display: none !important; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* --- TYPOGRAPHY & GLOWS --- */
+.esports-red-glow { color: var(--accent-red); text-shadow: 0 0 10px var(--accent-red); font-weight: 900; letter-spacing: 2px; margin-top: 0; text-align: center;}
+.brand-title { margin: 0; font-size: 2.5rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; text-align: center;}
+.brand-title .highlight { color: var(--accent-red); display: block; font-size: 1.8rem;}
+.system-message { margin-top: 10px; font-weight: bold; min-height: 24px; font-size: 0.9rem; text-align: center;}
+
+/* --- BUTTONS --- */
+.btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 14px 25px; border-radius: 8px; font-weight: bold; text-decoration: none;
+    transition: all 0.3s ease; font-size: 1rem; cursor: pointer; border: none;
+}
+.w-100 { width: 100%; margin-top: 15px; }
+.btn-red { background: linear-gradient(135deg, var(--accent-red), #B91C1C); color: white; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+.btn-red:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6); }
+.btn-dark { background: var(--bg-card); color: white; border: 1px solid var(--border-color); }
+.btn-dark:hover { background: #334155; }
+.btn-green-outline { background: var(--bg-card); color: white; border: 1px solid var(--accent-green); }
+.btn-green-outline:hover { background: rgba(16, 185, 129, 0.1); }
+.btn-text { background: transparent; border: none; color: var(--text-muted); font-weight: bold; cursor: pointer; font-size: 1rem; transition: color 0.2s;}
+.btn-text:hover { color: white; }
+.text-red { color: var(--accent-red); }
+
+/* --- CONTAINERS & CARDS --- */
+.card-container {
+    background: var(--bg-card); padding: 40px; border-radius: 12px;
+    border: 1px solid var(--accent-red); box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
+    width: 350px; position: relative; margin-top: 60px;
+}
+.wallet-glow::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent-red), transparent);
+}
+.nav-bar { width: 100%; max-width: 430px; display: flex; justify-content: space-between; padding: 20px; box-sizing: border-box; position: absolute; top: 0;}
+
+/* --- HERO & NEWS (HOME PAGE) --- */
+.hero-section { padding: 50px 20px; max-width: 800px; display: flex; flex-direction: column; align-items: center; }
+.logo-placeholder { width: 120px; height: 120px; background: radial-gradient(circle, rgba(239,68,68,0.2) 0%, rgba(11,17,32,0) 70%); border: 2px solid var(--accent-red); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-red); font-size: 2rem; font-weight: 900; margin-bottom: 20px; box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);}
+.hero-desc { color: var(--text-muted); text-align: center; line-height: 1.6; margin: 20px 0 30px; }
+.action-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 30px; }
+.info-pills { display: flex; gap: 15px; }
+.pill { background: rgba(30, 41, 59, 0.5); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; color: #CBD5E1; display: flex; align-items: center; gap: 8px; }
+.pill .red { color: var(--accent-red); }
+
+.news-section { background-color: #111827; width: 100%; display: flex; flex-direction: column; align-items: center; padding: 60px 20px; box-sizing: border-box; }
+.section-tag { background: #3F0000; color: var(--accent-red); padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-bottom: 15px; }
+.section-title { font-size: 2rem; margin: 0 0 30px; font-weight: 900; }
+.section-title span { color: var(--accent-red); }
+.news-card { background: var(--bg-card); border-radius: 12px; overflow: hidden; width: 100%; max-width: 600px; border: 1px solid var(--border-color); position: relative; }
+.new-badge { position: absolute; top: 15px; right: 15px; background: var(--accent-red); color: white; font-size: 0.7rem; font-weight: bold; padding: 3px 8px; border-radius: 4px; }
+.news-img { width: 100%; height: 200px; background-color: var(--bg-dark); display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+.news-content { padding: 20px; }
+.news-date { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px; }
+.news-title { margin: 0 0 10px; font-size: 1.2rem; }
+
+/* --- FORMS & INPUTS --- */
+.input-group { margin-bottom: 18px; text-align: left; }
+.input-group label { display: block; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 6px; font-weight: bold; text-transform: uppercase;}
+.input-group input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); background-color: #0F172A; color: white; box-sizing: border-box; outline: none; transition: all 0.3s; }
+.input-group input:focus { border-color: var(--accent-red); box-shadow: 0 0 8px rgba(239, 68, 68, 0.3); }
+.toggle-text { margin-top: 25px; color: var(--text-muted); font-size: 0.9rem; text-align: center; }
+.toggle-link { color: var(--accent-red); cursor: pointer; font-weight: bold; }
+.toggle-link:hover { text-decoration: underline; }
+
+/* --- WALLET SPECIFICS --- */
+.points-text { font-size: 3.5rem; font-weight: 900; display: block; text-align: center; margin-top: 10px; transition: color 0.3s; }
+.pts-label { font-size: 1.5rem; color: var(--text-muted); }
+.php-text { font-size: 1.3rem; color: var(--accent-green); font-weight: bold; display: block; text-align: center; }
+.progress-wrapper { margin-top: 35px; }
+.progress-wrapper small { color: var(--text-muted); font-weight: bold; text-transform: uppercase; font-size: 0.75rem; }
+.progress-bar-bg { background: #0F172A; height: 14px; border-radius: 7px; overflow: hidden; margin-top: 8px; border: 1px solid var(--border-color);}
+.progress-bar-fill { background: linear-gradient(90deg, #B91C1C, var(--accent-red)); height: 100%; width: 0%; transition: width 1s ease; }
+.btn-locked { background: #0F172A; color: #475569; cursor: not-allowed; border: 1px solid var(--border-color);}
+.btn-unlocked { background: var(--accent-red); color: white; cursor: pointer; border: 1px solid #FCA5A5;}
