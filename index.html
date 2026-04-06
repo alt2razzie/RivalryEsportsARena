@@ -6,34 +6,7 @@
     <title>RVL Hub - Rivalry Esports Arena</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root { --red: #EF4444; --bg: #0B1120; --card: #1E293B; --gray: #94A3B8; }
-        body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; overflow-x: hidden; }
-        .view { display: none; flex-direction: column; align-items: center; min-height: 100vh; width: 100%; animation: fadeIn 0.3s; }
-        .active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Home View Styling */
-        .hero { text-align: center; padding: 60px 20px; }
-        .logo { width: 100px; height: 100px; border: 2px solid var(--red); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--red); font-size: 1.5rem; font-weight: bold; margin: 0 auto 20px; box-shadow: 0 0 20px rgba(239,68,68,0.3); }
-        .btn-group { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-top: 30px; }
-        .btn { padding: 12px 25px; border-radius: 8px; font-weight: bold; text-decoration: none; cursor: pointer; border: none; transition: 0.3s; }
-        .btn-red { background: var(--red); color: white; box-shadow: 0 4px 15px rgba(239,68,68,0.4); }
-        .btn-outline { background: transparent; border: 1px solid var(--gray); color: white; }
-        .btn-profile { border: 1px solid #10B981; background: transparent; color: white; }
-
-        /* Card Styling (Auth & Wallet) */
-        .card { background: var(--card); padding: 35px; border-radius: 15px; border: 1px solid var(--red); width: 320px; margin-top: 50px; text-align: center; box-shadow: 0 0 25px rgba(239,68,68,0.2); }
-        .red-glow { color: var(--red); text-shadow: 0 0 10px var(--red); text-transform: uppercase; letter-spacing: 2px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 6px; border: 1px solid #334155; background: #0F172A; color: white; box-sizing: border-box; }
-        
-        /* Wallet Logic */
-        .pts { font-size: 3rem; font-weight: bold; margin: 15px 0 5px; }
-        .php { color: #10B981; font-weight: bold; margin-bottom: 20px; }
-        .bar-bg { background: #0F172A; height: 12px; border-radius: 6px; margin: 10px 0; overflow: hidden; border: 1px solid #334155; }
-        .bar-fill { background: var(--red); height: 100%; width: 0%; transition: 1s; }
-        .msg { font-size: 0.8rem; min-height: 20px; margin: 10px 0; font-weight: bold; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -42,7 +15,7 @@
             <div class="logo">RVL</div>
             <h1 style="text-transform: uppercase; letter-spacing: 2px;">Rivalry <span style="color:var(--red)">Esports Arena</span></h1>
             <div class="btn-group">
-                <a href="https://facebook.com/yourpage" class="btn btn-red"><i class="fab fa-facebook"></i> Follow Us</a>
+                <a href="https://facebook.com/yourpage" class="btn btn-red" id="fb-link"><i class="fab fa-facebook"></i> Follow Us</a>
                 <button onclick="showView('auth')" class="btn btn-profile"><i class="fas fa-user"></i> My Profile</button>
             </div>
         </div>
@@ -52,10 +25,13 @@
         <div class="card">
             <h2 class="red-glow" id="authTitle">RVL Login</h2>
             <div id="authMsg" class="msg"></div>
-            <input type="text" id="regUser" class="reg-only" style="display:none" placeholder="Gamer Tag">
+            
+            <input type="text" id="regUser" placeholder="Gamer Tag" style="display:none">
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
+            
             <button onclick="handleAuth()" id="authBtn" class="btn btn-red" style="width:100%">Sign In</button>
+            
             <p style="font-size: 0.8rem; color: var(--gray); margin-top: 15px;">
                 <span id="toggleText">Don't have an account?</span> 
                 <span onclick="toggleAuth()" style="color:var(--red); cursor:pointer; font-weight:bold">Click here</span>
@@ -65,95 +41,17 @@
     </div>
 
     <div id="wallet" class="view">
-        <div class="card" style="position: relative;">
+        <div class="card">
             <h2 class="red-glow">RVL Wallet</h2>
             <div id="walletMsg" class="msg"></div>
             <div class="pts"><span id="valPoints">0.0</span> <small style="font-size:1rem; color:var(--gray)">Pts</small></div>
             <div class="php">≈ ₱<span id="valPhp">0.00</span></div>
-            <div style="text-align: left; font-size: 0.7rem; color: var(--gray);">₱200 Threshold (50 Pts)</div>
             <div class="bar-bg"><div id="bar" class="bar-fill"></div></div>
             <button id="claimBtn" class="btn btn-outline" style="width:100%; margin-top:20px" disabled>Locked</button>
             <button onclick="handleLogout()" class="btn btn-outline" style="width:100%; margin-top:10px; border-color: var(--red); color: var(--red);">Sign Out</button>
         </div>
     </div>
 
-    <script>
-        const CONF = { URL: 'YOUR_URL', KEY: 'YOUR_KEY' };
-        const db = supabase.createClient(CONF.URL, CONF.KEY);
-        let user = null, isLogin = true, pendingToken = new URLSearchParams(window.location.search).get('token');
-
-        function showView(id) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            if (id === 'wallet') loadWallet();
-        }
-
-        function toggleAuth() {
-            isLogin = !isLogin;
-            document.getElementById('authTitle').innerText = isLogin ? 'RVL Login' : 'RVL Register';
-            document.getElementById('authBtn').innerText = isLogin ? 'Sign In' : 'Register';
-            document.querySelectorAll('.reg-only').forEach(el => el.style.display = isLogin ? 'none' : 'block');
-        }
-
-        async function handleAuth() {
-            const email = document.getElementById('email').value, pass = document.getElementById('password').value;
-            const msg = document.getElementById('authMsg');
-            msg.innerText = "Processing...";
-            
-            let res;
-            if (isLogin) {
-                res = await db.auth.signInWithPassword({ email, password: pass });
-            } else {
-                const userTag = document.getElementById('regUser').value;
-                res = await db.auth.signUp({ email, password: pass, options: { data: { username: userTag } } });
-            }
-
-            if (res.error) { msg.innerText = res.error.message; msg.style.color = 'red'; }
-            else { 
-                user = res.data.user;
-                if (pendingToken) { showView('wallet'); claim(pendingToken); }
-                else { showView('wallet'); }
-            }
-        }
-
-        async function loadWallet() {
-            const { data } = await db.from('user_profiles').select('total_points').eq('user_id', user.id).single();
-            if (data) updateUI(data.total_points);
-            
-            // Realtime listener
-            db.channel('any').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_profiles', filter: `user_id=eq.${user.id}` }, 
-            payload => updateUI(payload.new.total_points)).subscribe();
-        }
-
-        function updateUI(pts) {
-            document.getElementById('valPoints').innerText = pts.toFixed(1);
-            document.getElementById('valPhp').innerText = (pts * 4).toFixed(2);
-            const per = Math.min((pts / 50) * 100, 100);
-            document.getElementById('bar').style.width = per + "%";
-            const btn = document.getElementById('claimBtn');
-            if (pts >= 50) { btn.disabled = false; btn.innerText = "Claim ₱200"; btn.className = "btn btn-red"; }
-        }
-
-        async function claim(t) {
-            const msg = document.getElementById('walletMsg');
-            msg.innerText = "Claiming token...";
-            const { data, error } = await db.rpc('claim_reward_token', { p_token_id: t });
-            if (error) { msg.innerText = "Token invalid or used."; msg.style.color = 'red'; }
-            else { msg.innerText = `Success! +${data.toFixed(1)} Pts`; msg.style.color = '#10B981'; }
-            window.history.replaceState({}, '', '/'); 
-        }
-
-        async function handleLogout() { await db.auth.signOut(); location.reload(); }
-
-        // Auto-login check
-        window.onload = async () => {
-            const { data } = await db.auth.getUser();
-            if (data.user) { 
-                user = data.user; 
-                if (pendingToken) { showView('wallet'); claim(pendingToken); }
-                else { showView('wallet'); }
-            }
-        };
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
