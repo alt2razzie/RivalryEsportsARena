@@ -7,73 +7,39 @@ const CONFIG = {
         FACEBOOK: "https://facebook.com/your-rvl-page",
         SUPPORT: "https://discord.gg/your-support-link"
     },
-    // Supabase Credentials
+    // IMPORTANT: Replace these with your real Supabase details!
+    // Keep the 'single quotes' around them.
     SUPABASE_URL: 'https://fzsrmnexarqlaawnhmw.supabase.co',
     SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6c3JtbmV4YXJxcmxhYXduaG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTc3NjAsImV4cCI6MjA5MTA3Mzc2MH0.VMN_srt8MBpQBq4F3SlTZJrnubrERF4RIGHG-Qe3dRQ',
-    // Economy
+    
+    // Economy Variables
     POINTS_REQUIRED: 50,
     PHP_PER_POINT: 4
 };
 
-// Initialize Supabase
-const supabase = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
-
-// State Variables
+// Global State
 let isLoginMode = true;
 let currentUser = null;
-let pendingToken = null; // Stores QR code token if user isn't logged in yet
+let pendingToken = null;
+let supabase = null;
 
 // ==========================================
-// 2. INITIALIZATION & ROUTING
+// 2. UI ROUTING (Safe from Database Errors)
 // ==========================================
-window.onload = async () => {
-    // Inject the links into the HTML buttons
-    document.getElementById('btn-follow').href = CONFIG.LINKS.FACEBOOK;
-    document.getElementById('btn-support').href = CONFIG.LINKS.SUPPORT;
-
-    // Check if there is a QR Token in the URL (?token=XYZ)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('token')) {
-        pendingToken = urlParams.get('token');
-        // Clean URL so it doesn't trigger again on manual refresh
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    // Check Auth State
-    const { data: { user } } = await supabase.auth.getUser();
-    currentUser = user;
-
-    // Decide where to send the user on load
-    if (pendingToken) {
-        if (currentUser) {
-            navigateTo('dashboard');
-            claimToken(pendingToken);
-        } else {
-            navigateTo('auth'); // Force login to claim
-        }
-    } else {
-        navigateTo('home'); // Default starting view
-    }
-};
-
-// Simple Router function to hide/show views
+// This function slides the screens. It will always work, even if DB is offline.
 function navigateTo(viewName) {
     document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
     document.getElementById(`${viewName}-view`).classList.remove('hidden');
 
-    // If navigating to dashboard, initialize it
     if (viewName === 'dashboard') {
         if (!currentUser) {
-            navigateTo('auth'); // Security block
+            navigateTo('auth'); // Bouncer: Send unauthenticated users to login
             return;
         }
         initDashboard();
     }
 }
 
-// ==========================================
-// 3. AUTHENTICATION CONTROLLER
-// ==========================================
 function toggleAuthMode() {
     isLoginMode = !isLoginMode;
     const regElements = document.querySelectorAll('.register-only');
@@ -93,7 +59,57 @@ function toggleAuthMode() {
     }
 }
 
+// ==========================================
+// 3. INITIALIZATION & DATABASE CONNECTION
+// ==========================================
+window.onload = async () => {
+    // 1. Setup the Home Page Links
+    document.getElementById('btn-follow').href = CONFIG.LINKS.FACEBOOK;
+    document.getElementById('btn-support').href = CONFIG.LINKS.SUPPORT;
+
+    // 2. Check for QR Code in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('token')) {
+        pendingToken = urlParams.get('token');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // 3. Try to connect to Supabase securely
+    try {
+        // This prevents the "crash" if you haven't replaced the URL string yet
+        if (CONFIG.SUPABASE_URL.startsWith('http')) {
+            supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+            const { data: { user } } = await supabase.auth.getUser();
+            currentUser = user;
+        } else {
+            console.warn("Supabase keys missing! The UI works, but Login/Dashboard will fail.");
+        }
+    } catch (err) {
+        console.error("Database connection error:", err);
+    }
+
+    // 4. Decide where the user lands
+    if (pendingToken) {
+        if (currentUser) {
+            navigateTo('dashboard');
+            claimToken(pendingToken);
+        } else {
+            navigateTo('auth');
+        }
+    } else {
+        navigateTo('home');
+    }
+};
+
+// ==========================================
+// 4. SUPABASE AUTHENTICATION
+// ==========================================
 async function handleAuth() {
+    if (!supabase) {
+        alert("Database not connected. Please add Supabase URL & Key in app.js");
+        return;
+    }
+
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const msgDiv = document.getElementById('authMessage');
@@ -130,23 +146,25 @@ function processAuthResult(data, error, msgDiv, btn, successMsg) {
             navigateTo('dashboard');
             if (pendingToken) {
                 claimToken(pendingToken);
-                pendingToken = null; // Clear it after use
+                pendingToken = null; 
             }
         }, 1000);
     }
 }
 
 async function handleLogout() {
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
     currentUser = null;
     navigateTo('home');
 }
 
 // ==========================================
-// 4. DASHBOARD & ECONOMY CONTROLLER
+// 5. DASHBOARD & ECONOMY (Real-Time)
 // ==========================================
 async function initDashboard() {
-    // 1. Fetch Initial Wallet State
+    if (!supabase) return;
+
+    // Fetch initial points
     const { data: profile } = await supabase
         .from('user_profiles')
         .select('total_points')
@@ -155,7 +173,7 @@ async function initDashboard() {
 
     if (profile) updateWalletUI(profile.total_points);
 
-    // 2. Start Real-Time Listener
+    // Start WebSocket Listener
     supabase.channel('custom-user-profile')
         .on('postgres_changes', {
                 event: 'UPDATE', schema: 'public', table: 'user_profiles', filter: `user_id=eq.${currentUser.id}`
@@ -174,6 +192,8 @@ async function initDashboard() {
 }
 
 async function claimToken(token) {
+    if (!supabase) return;
+
     const msgDiv = document.getElementById('dashboardMessage');
     msgDiv.innerHTML = "Decrypting token securely...";
     msgDiv.style.color = "#FCD34D"; 
