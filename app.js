@@ -1,16 +1,16 @@
-// ==========================================
+
+    // ==========================================
 // 1. CONFIGURATION (EDIT THESE)
 // ==========================================
 const CONFIG = {
-    // Put your actual social media and support links here
     LINKS: {
         FACEBOOK: "https://facebook.com/your-rvl-page",
         SUPPORT: "https://discord.gg/your-support-link"
     },
     // IMPORTANT: Replace these with your real Supabase details!
-    // Keep the 'single quotes' around them.
     SUPABASE_URL: 'https://fzsrmnexarqlaawnhmw.supabase.co',
     SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6c3JtbmV4YXJxcmxhYXduaG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTc3NjAsImV4cCI6MjA5MTA3Mzc2MH0.VMN_srt8MBpQBq4F3SlTZJrnubrERF4RIGHG-Qe3dRQ',
+
     
     // Economy Variables
     POINTS_REQUIRED: 50,
@@ -21,19 +21,18 @@ const CONFIG = {
 let isLoginMode = true;
 let currentUser = null;
 let pendingToken = null;
-let supabase = null;
+let dbClient = null; // Renamed to avoid collision with the CDN script
 
 // ==========================================
 // 2. UI ROUTING (Safe from Database Errors)
 // ==========================================
-// This function slides the screens. It will always work, even if DB is offline.
 function navigateTo(viewName) {
     document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
     document.getElementById(`${viewName}-view`).classList.remove('hidden');
 
     if (viewName === 'dashboard') {
         if (!currentUser) {
-            navigateTo('auth'); // Bouncer: Send unauthenticated users to login
+            navigateTo('auth'); 
             return;
         }
         initDashboard();
@@ -63,23 +62,20 @@ function toggleAuthMode() {
 // 3. INITIALIZATION & DATABASE CONNECTION
 // ==========================================
 window.onload = async () => {
-    // 1. Setup the Home Page Links
     document.getElementById('btn-follow').href = CONFIG.LINKS.FACEBOOK;
     document.getElementById('btn-support').href = CONFIG.LINKS.SUPPORT;
 
-    // 2. Check for QR Code in URL
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('token')) {
         pendingToken = urlParams.get('token');
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    // 3. Try to connect to Supabase securely
     try {
-        // This prevents the "crash" if you haven't replaced the URL string yet
         if (CONFIG.SUPABASE_URL.startsWith('http')) {
-            supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
-            const { data: { user } } = await supabase.auth.getUser();
+            // Using window.supabase from the CDN, assigning it to dbClient
+            dbClient = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+            const { data: { user } } = await dbClient.auth.getUser();
             currentUser = user;
         } else {
             console.warn("Supabase keys missing! The UI works, but Login/Dashboard will fail.");
@@ -88,7 +84,6 @@ window.onload = async () => {
         console.error("Database connection error:", err);
     }
 
-    // 4. Decide where the user lands
     if (pendingToken) {
         if (currentUser) {
             navigateTo('dashboard');
@@ -105,7 +100,7 @@ window.onload = async () => {
 // 4. SUPABASE AUTHENTICATION
 // ==========================================
 async function handleAuth() {
-    if (!supabase) {
+    if (!dbClient) {
         alert("Database not connected. Please add Supabase URL & Key in app.js");
         return;
     }
@@ -120,12 +115,12 @@ async function handleAuth() {
     btn.disabled = true;
 
     if (isLoginMode) {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await dbClient.auth.signInWithPassword({ email, password });
         processAuthResult(data, error, msgDiv, btn, "Access Granted!");
     } else {
         const username = document.getElementById('username').value;
         const referral = document.getElementById('referral').value;
-        const { data, error } = await supabase.auth.signUp({
+        const { data, error } = await dbClient.auth.signUp({
             email, password, options: { data: { username, used_referral: referral || null } }
         });
         processAuthResult(data, error, msgDiv, btn, "Account created! Initializing wallet...");
@@ -153,7 +148,7 @@ function processAuthResult(data, error, msgDiv, btn, successMsg) {
 }
 
 async function handleLogout() {
-    if (supabase) await supabase.auth.signOut();
+    if (dbClient) await dbClient.auth.signOut();
     currentUser = null;
     navigateTo('home');
 }
@@ -162,10 +157,9 @@ async function handleLogout() {
 // 5. DASHBOARD & ECONOMY (Real-Time)
 // ==========================================
 async function initDashboard() {
-    if (!supabase) return;
+    if (!dbClient) return;
 
-    // Fetch initial points
-    const { data: profile } = await supabase
+    const { data: profile } = await dbClient
         .from('user_profiles')
         .select('total_points')
         .eq('user_id', currentUser.id)
@@ -173,8 +167,7 @@ async function initDashboard() {
 
     if (profile) updateWalletUI(profile.total_points);
 
-    // Start WebSocket Listener
-    supabase.channel('custom-user-profile')
+    dbClient.channel('custom-user-profile')
         .on('postgres_changes', {
                 event: 'UPDATE', schema: 'public', table: 'user_profiles', filter: `user_id=eq.${currentUser.id}`
             }, (payload) => {
@@ -192,13 +185,13 @@ async function initDashboard() {
 }
 
 async function claimToken(token) {
-    if (!supabase) return;
+    if (!dbClient) return;
 
     const msgDiv = document.getElementById('dashboardMessage');
     msgDiv.innerHTML = "Decrypting token securely...";
     msgDiv.style.color = "#FCD34D"; 
 
-    const { data: pointsEarned, error } = await supabase.rpc('claim_reward_token', { p_token_id: token });
+    const { data: pointsEarned, error } = await dbClient.rpc('claim_reward_token', { p_token_id: token });
 
     if (error) {
         msgDiv.innerHTML = "Error: Token invalid or already claimed.";
