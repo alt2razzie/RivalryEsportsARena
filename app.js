@@ -8,7 +8,7 @@ const CONFIG = {
         SUPPORT: "https://discord.gg/your-support-link"
     },
     // IMPORTANT: Replace these with your real Supabase details!
-    SUPABASE_URL: 'https://fzsrmnexarqlaawnhmw.supabase.co',
+    SUPABASE_URL: 'https://fzsrmnexarqrlaawnhmw.supabase.co',
     SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6c3JtbmV4YXJxcmxhYXduaG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTc3NjAsImV4cCI6MjA5MTA3Mzc2MH0.VMN_srt8MBpQBq4F3SlTZJrnubrERF4RIGHG-Qe3dRQ',
 
     
