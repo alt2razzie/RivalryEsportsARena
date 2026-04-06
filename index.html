@@ -3,294 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rivalry Esports Arena - IOS Hub</title>
+    <title>Rivalry Esports Arena - RVL Hub</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Base Theme */
-        body {
-            background-color: #0B1120; /* Deepest dark blue/black */
-            color: #F8FAFC;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* Top Hero Section */
-        .hero-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding: 50px 20px 30px;
-            max-width: 800px;
-            width: 100%;
-        }
-
-        .logo-placeholder {
-            width: 120px;
-            height: 120px;
-            background: radial-gradient(circle, rgba(239,68,68,0.2) 0%, rgba(11,17,32,0) 70%);
-            border: 2px solid #EF4444;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #EF4444;
-            font-size: 2rem;
-            font-weight: 900;
-            margin-bottom: 20px;
-            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
-            letter-spacing: 2px;
-        }
-
-        .brand-title { margin: 0; font-size: 2.5rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;}
-        .brand-title .highlight { color: #EF4444; display: block; font-size: 1.8rem;}
-        
-        .hero-desc {
-            color: #94A3B8;
-            font-size: 1rem;
-            line-height: 1.6;
-            margin: 20px 0 30px;
-            max-width: 600px;
-        }
-
-        /* Action Buttons Container */
-        .action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 30px;
-            width: 100%;
-        }
-
-        /* Button Styles */
-        .btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-weight: bold;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-            min-width: 140px;
-        }
-
-        .btn-red {
-            background: linear-gradient(135deg, #EF4444, #B91C1C);
-            color: white;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
-        }
-        .btn-red:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6); }
-
-        .btn-dark {
-            background: #1E293B;
-            color: white;
-            border: 1px solid #334155;
-        }
-        .btn-dark:hover { background: #334155; }
-
-        .btn-green-outline {
-            background: #1E293B;
-            color: #F8FAFC;
-            border: 1px solid #10B981; /* Green border for profile */
-        }
-        .btn-green-outline:hover { background: rgba(16, 185, 129, 0.1); }
-
-        /* Secondary Info Pills */
-        .info-pills {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 50px;
-        }
-        .pill {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid #334155;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: #CBD5E1;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .pill i.red { color: #EF4444; }
-
-        /* News Section */
-        .news-section {
-            background-color: #111827; /* Slightly lighter dark section */
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 60px 20px;
-            box-sizing: border-box;
-        }
-
-        .section-tag {
-            background: #3F0000;
-            color: #EF4444;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-        }
-
-        .section-title {
-            font-size: 2rem;
-            margin: 0 0 40px;
-            font-weight: 900;
-        }
-        .section-title span { color: #EF4444; }
-
-        /* News Cards */
-        .news-card {
-            background: #1E293B;
-            border-radius: 12px;
-            overflow: hidden;
-            width: 100%;
-            max-width: 600px;
-            margin-bottom: 25px;
-            border: 1px solid #334155;
-            transition: transform 0.3s;
-            position: relative;
-        }
-        .news-card:hover { transform: translateY(-5px); }
-
-        .new-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #EF4444;
-            color: white;
-            font-size: 0.7rem;
-            font-weight: bold;
-            padding: 3px 8px;
-            border-radius: 4px;
-        }
-
-        .news-img {
-            width: 100%;
-            height: 200px;
-            background-color: #0F172A;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #475569;
-            font-size: 0.9rem;
-        }
-
-        .news-content { padding: 20px; text-align: left; }
-        .news-date { color: #94A3B8; font-size: 0.85rem; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;}
-        .news-title { margin: 0 0 10px; font-size: 1.2rem; font-weight: bold; }
-        .news-text { color: #94A3B8; font-size: 0.95rem; line-height: 1.5; margin-bottom: 15px;}
-        .read-more { color: #EF4444; text-decoration: none; font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; gap: 5px;}
-        .read-more:hover { color: #DC2626; }
-
-        /* Footer */
-        .footer {
-            padding: 40px 20px;
-            text-align: center;
-            width: 100%;
-            background: #0B1120;
-        }
-        .footer-text { color: #CBD5E1; margin-bottom: 20px; }
-        .btn-blue { background: #3B82F6; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 10px;}
-        .btn-blue:hover { background: #2563EB; }
-    </style>
+    
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="hero-section">
-        <div class="logo-placeholder">IOS</div>
-        
-        <h1 class="brand-title">
-            <span class="highlight">RIVALRY</span>
-            ESPORTS ARENA
-        </h1>
-        
-        <p class="hero-desc">
-            Your ultimate gaming destination. High-end PCs, competitive tournaments, 
-            and an epic gaming community.
-        </p>
+    <div id="home-view" class="view-section active">
+        <div class="hero-section">
+            <div class="logo-placeholder">RVL</div>
+            <h1 class="brand-title"><span class="highlight">RIVALRY</span> ESPORTS ARENA</h1>
+            <p class="hero-desc">Your ultimate gaming destination. High-end PCs, competitive tournaments, and an epic gaming community.</p>
 
-        <div class="action-buttons">
-            <a href="https://facebook.com/your-page" target="_blank" class="btn btn-red">
-                <i class="fab fa-facebook-f"></i> Follow Us
-            </a>
-            
-            <a href="#" class="btn btn-dark">
-                <i class="fas fa-headset"></i> Get Support
-            </a>
-            
-            <a href="dashboard.html" class="btn btn-green-outline">
-                <i class="fas fa-user-plus"></i> My Profile
-            </a>
+            <div class="action-buttons">
+                <a href="#" id="btn-follow" target="_blank" class="btn btn-red">
+                    <i class="fab fa-facebook-f"></i> Follow Us
+                </a>
+                <a href="#" id="btn-support" target="_blank" class="btn btn-dark">
+                    <i class="fas fa-headset"></i> Get Support
+                </a>
+                <button onclick="navigateTo('dashboard')" class="btn btn-green-outline">
+                    <i class="fas fa-user-plus"></i> My Profile
+                </button>
+            </div>
+
+            <div class="info-pills">
+                <div class="pill"><i class="fas fa-map-marker-alt red"></i> Visit Our Arena</div>
+                <div class="pill"><i class="far fa-clock red"></i> Open Daily</div>
+            </div>
         </div>
 
-        <div class="info-pills">
-            <div class="pill">
-                <i class="fas fa-map-marker-alt red"></i> Visit Our Arena
-            </div>
-            <div class="pill">
-                <i class="far fa-clock red"></i> Open Daily
+        <div class="news-section">
+            <div class="section-tag">WHAT'S NEW</div>
+            <h2 class="section-title">Latest from <span>RVL</span></h2>
+            
+            <div class="news-card">
+                <div class="new-badge">NEW</div>
+                <div class="news-img">[ Promo Graphic Placeholder ]</div>
+                <div class="news-content">
+                    <div class="news-date"><i class="far fa-calendar-alt"></i> Feb 1, 2026</div>
+                    <h3 class="news-title">Follow Us on Facebook</h3>
+                    <p class="news-text">Stay updated with our latest news, promos, and events.</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="news-section">
-        <div class="section-tag">WHAT'S NEW</div>
-        <h2 class="section-title">Latest from <span>IOS</span></h2>
-
-        <div class="news-card">
-            <div class="new-badge">NEW</div>
-            <div class="news-img">[ Image Placeholder: Promo Graphic ]</div>
-            
-            <div class="news-content">
-                <div class="news-date"><i class="far fa-calendar-alt"></i> Feb 1, 2026</div>
-                <h3 class="news-title">Follow Us on Facebook</h3>
-                <p class="news-text">Stay updated with our latest news, promos, and events. Follow our Facebook page for exclusive updates!</p>
-                <a href="#" class="read-more">Read More <i class="fas fa-external-link-alt"></i></a>
-            </div>
-        </div>
-
-        <div class="news-card">
-            <div class="new-badge">NEW</div>
-            <div class="news-img">[ Image Placeholder: Arena Photo ]</div>
-            
-            <div class="news-content">
-                <div class="news-date"><i class="far fa-calendar-alt"></i> Apr 28, 2024</div>
-                <h3 class="news-title">Welcome to Rivalry Esports Arena!</h3>
-                <p class="news-text">We're excited to announce the opening of IOS Hub! Come experience premium gaming with high-performance PCs and a great atmosphere.</p>
-                <a href="#" class="read-more">Read More <i class="fas fa-external-link-alt"></i></a>
-            </div>
+    <div id="auth-view" class="view-section hidden">
+        <div class="nav-bar">
+            <button onclick="navigateTo('home')" class="btn-text">← Back to Home</button>
         </div>
         
-        <div style="position: fixed; bottom: 30px; right: 30px; background: #EF4444; width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5); cursor: pointer; z-index: 100;">
-            <i class="fas fa-headphones" style="color: white; font-size: 1.2rem;"></i>
+        <div class="card-container">
+            <h2 id="auth-title" class="esports-red-glow">RVL HUB LOGIN</h2>
+            
+            <form id="authForm" onsubmit="event.preventDefault(); handleAuth();">
+                <div class="input-group register-only hidden">
+                    <label>Gamer Tag (Username)</label>
+                    <input type="text" id="username" placeholder="e.g., Faker">
+                </div>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="email" required placeholder="player@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <div class="input-group register-only hidden">
+                    <label>Referral Code (Optional)</label>
+                    <input type="text" id="referral" placeholder="Got a code?">
+                </div>
+                <button type="submit" id="submitBtn" class="btn btn-red w-100">Secure Login</button>
+            </form>
+
+            <div id="authMessage" class="system-message"></div>
+            
+            <div class="toggle-text">
+                <span id="toggleQuestion">Don't have an account?</span> 
+                <span class="toggle-link" onclick="toggleAuthMode()">Register here</span>
+            </div>
         </div>
     </div>
 
-    <div class="footer">
-        <p class="footer-text">Follow our Facebook page for more updates and announcements!</p>
-        <a href="#" class="btn-blue"><i class="fab fa-facebook-f"></i> Visit Our Facebook Page</a>
-        
-        <div style="margin-top: 50px; color: #475569; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                 <div style="width: 30px; height: 30px; background: #EF4444; border-radius: 50%; color: #0B1120; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 0.6rem;">IOS</div>
-                 <strong>Rivalry Esports Arena</strong>
+    <div id="dashboard-view" class="view-section hidden">
+        <div class="nav-bar">
+            <button onclick="navigateTo('home')" class="btn-text">← Home</button>
+            <button onclick="handleLogout()" class="btn-text text-red">Sign Out</button>
+        </div>
+
+        <div class="card-container wallet-glow">
+            <h2 class="esports-red-glow">RVL HUB WALLET</h2>
+            <div id="dashboardMessage" class="system-message"></div>
+            
+            <span class="points-text"><span id="pointBalance">0.0</span> <span class="pts-label">Pts</span></span>
+            <span class="php-text">≈ ₱<span id="phpBalance">0.00</span></span>
+
+            <div class="progress-wrapper">
+                <small>₱200 Cashback Threshold (50 Pts)</small>
+                <div class="progress-bar-bg">
+                    <div id="cashbackProgress" class="progress-bar-fill"></div>
+                </div>
             </div>
-            <small>Your Gaming Home</small>
+
+            <button id="claimCashbackBtn" class="btn btn-locked w-100" disabled>Locked (Needs 50 Pts)</button>
         </div>
     </div>
 
+    <script src="app.js"></script>
 </body>
 </html>
