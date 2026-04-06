@@ -4,51 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RVL Hub - Rivalry Esports Arena</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="home" class="view active">
+    <div id="home-view" class="view active">
         <div class="hero">
             <div class="logo">RVL</div>
-            <h1 style="text-transform: uppercase; letter-spacing: 2px;">Rivalry <span style="color:var(--red)">Esports Arena</span></h1>
+            <h1>RIVALRY ESPORTS</h1>
             <div class="btn-group">
-                <a href="https://facebook.com/yourpage" class="btn btn-red" id="fb-link"><i class="fab fa-facebook"></i> Follow Us</a>
-                <button onclick="showView('auth')" class="btn btn-profile"><i class="fas fa-user"></i> My Profile</button>
+                <button onclick="navigateTo('auth')" class="btn btn-red">MY PROFILE</button>
+                <a href="https://facebook.com/yourpage" target="_blank" class="btn btn-outline">FOLLOW US</a>
             </div>
         </div>
     </div>
 
-    <div id="auth" class="view">
+    <div id="auth-view" class="view">
         <div class="card">
-            <h2 class="red-glow" id="authTitle">RVL Login</h2>
+            <h2 id="authTitle" class="red-glow">RVL Login</h2>
             <div id="authMsg" class="msg"></div>
-            
-            <input type="text" id="regUser" placeholder="Gamer Tag" style="display:none">
+            <input type="text" id="regUser" style="display:none" placeholder="Gamer Tag">
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
-            
-            <button onclick="handleAuth()" id="authBtn" class="btn btn-red" style="width:100%">Sign In</button>
-            
-            <p style="font-size: 0.8rem; color: var(--gray); margin-top: 15px;">
-                <span id="toggleText">Don't have an account?</span> 
-                <span onclick="toggleAuth()" style="color:var(--red); cursor:pointer; font-weight:bold">Click here</span>
+            <button onclick="handleAuth()" id="authBtn" class="btn btn-red">Sign In</button>
+            <p class="toggle-text">
+                <span id="toggleText">New player?</span> 
+                <span onclick="toggleAuth()" class="link-red">Create Account</span>
             </p>
-            <button onclick="showView('home')" class="btn btn-outline" style="width:100%; margin-top:10px">Back</button>
+            <button onclick="navigateTo('home')" class="btn btn-outline">Back</button>
         </div>
     </div>
 
-    <div id="wallet" class="view">
+    <div id="scanner-view" class="view">
+        <div class="card">
+            <h2 class="red-glow">SCAN PC</h2>
+            <div id="reader"></div>
+            <div id="scanMsg" class="msg">Align QR code within frame</div>
+            <button onclick="stopScanner(); navigateTo('wallet')" class="btn btn-outline">Cancel</button>
+        </div>
+    </div>
+
+    <div id="wallet-view" class="view">
         <div class="card">
             <h2 class="red-glow">RVL Wallet</h2>
             <div id="walletMsg" class="msg"></div>
-            <div class="pts"><span id="valPoints">0.0</span> <small style="font-size:1rem; color:var(--gray)">Pts</small></div>
-            <div class="php">≈ ₱<span id="valPhp">0.00</span></div>
+            <div class="pts"><span id="valPoints">0.0</span> <small>Pts</small></div>
+            <div class="php-val">≈ ₱<span id="valPhp">0.00</span></div>
             <div class="bar-bg"><div id="bar" class="bar-fill"></div></div>
-            <button id="claimBtn" class="btn btn-outline" style="width:100%; margin-top:20px" disabled>Locked</button>
-            <button onclick="handleLogout()" class="btn btn-outline" style="width:100%; margin-top:10px; border-color: var(--red); color: var(--red);">Sign Out</button>
+            
+            <button onclick="startScanner()" class="btn btn-red"><i class="fas fa-camera"></i> SCAN TO CLAIM</button>
+            <button id="claimBtn" class="btn btn-locked" disabled>Reward Locked</button>
+            <button onclick="handleLogout()" class="btn btn-logout">Sign Out</button>
         </div>
     </div>
 
