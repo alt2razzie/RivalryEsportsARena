@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IOS Hub - Authentication</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background-color: #0B1120; color: #F8FAFC;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; margin: 0;
+        }
+        .auth-container {
+            background: #1E293B; padding: 40px; border-radius: 12px;
+            border: 1px solid #EF4444; box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
+            width: 350px; text-align: center;
+        }
+        .esports-red-glow { color: #EF4444; text-shadow: 0 0 10px #EF4444; font-weight: 900; letter-spacing: 2px; margin-top: 0;}
+        
+        .input-group { margin-bottom: 18px; text-align: left; }
+        .input-group label { display: block; color: #94A3B8; font-size: 0.85rem; margin-bottom: 6px; font-weight: bold; text-transform: uppercase;}
+        .input-group input {
+            width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #334155;
+            background-color: #0F172A; color: white; box-sizing: border-box; outline: none; transition: all 0.3s;
+        }
+        .input-group input:focus { border-color: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.3); }
+        
+        .btn {
+            padding: 14px; width: 100%; border: none; border-radius: 6px; font-weight: bold;
+            margin-top: 10px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; letter-spacing: 1px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #EF4444, #B91C1C); color: white; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6); }
+        
+        .toggle-text { margin-top: 25px; color: #94A3B8; font-size: 0.9rem; }
+        .toggle-link { color: #EF4444; cursor: pointer; font-weight: bold; transition: color 0.2s; }
+        .toggle-link:hover { color: #FCA5A5; text-decoration: underline; }
+        
+        #authMessage { margin-top: 15px; font-weight: bold; min-height: 20px; font-size: 0.9rem;}
+        .register-only { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <h2 class="esports-red-glow">IOS HUB LOGIN</h2>
+        
+        <form id="authForm" onsubmit="event.preventDefault(); handleAuth();">
+            
+            <div class="input-group register-only">
+                <label for="username">Gamer Tag (Username)</label>
+                <input type="text" id="username" placeholder="e.g., Faker">
+            </div>
+
+            <div class="input-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" required placeholder="player@example.com">
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="••••••••">
+            </div>
+
+            <div class="input-group register-only">
+                <label for="referral">Referral Code (Optional)</label>
+                <input type="text" id="referral" placeholder="Got a code from a friend?">
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn btn-primary">Secure Login</button>
+        </form>
+
+        <div id="authMessage"></div>
+
+        <div class="toggle-text">
+            <span id="toggleQuestion">Don't have an account?</span> 
+            <span class="toggle-link" onclick="toggleMode()">Register here</span>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let isLoginMode = true;
+
+        // Remember where they were trying to go (useful for QR code scans)
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get('redirect') || '/dashboard.html';
+
+        function toggleMode() {
+            isLoginMode = !isLoginMode;
+            const regElements = document.querySelectorAll('.register-only');
+            const title = document.querySelector('h2');
+            const btn = document.getElementById('submitBtn');
+            const question = document.getElementById('toggleQuestion');
+            const link = document.querySelector('.toggle-link');
+            const msgDiv = document.getElementById('authMessage');
+
+            msgDiv.innerHTML = ""; 
+
+            if (isLoginMode) {
+                regElements.forEach(el => el.style.display = 'none');
+                title.innerText = "IOS HUB LOGIN";
+                btn.innerText = "Secure Login";
+                question.innerText = "Don't have an account?";
+                link.innerText = "Register here";
+                document.getElementById('username').removeAttribute('required');
+            } else {
+                regElements.forEach(el => el.style.display = 'block');
+                title.innerText = "JOIN IOS HUB";
+                btn.innerText = "Create Account";
+                question.innerText = "Already have an account?";
+                link.innerText = "Sign In here";
+                document.getElementById('username').setAttribute('required', 'true');
+            }
+        }
+
+        async function handleAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const msgDiv = document.getElementById('authMessage');
+            const btn = document.getElementById('submitBtn');
+
+            msgDiv.style.color = "#FCD34D"; 
+            msgDiv.innerHTML = "Authenticating securely...";
+            btn.disabled = true;
+
+            if (isLoginMode) {
+                // --- SIGN IN ---
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    msgDiv.style.color = "#EF4444";
+                    msgDiv.innerHTML = "Error: " + error.message;
+                    btn.disabled = false;
+                } else {
+                    msgDiv.style.color = "#10B981";
+                    msgDiv.innerHTML = "Access Granted! Redirecting...";
+                    setTimeout(() => { window.location.href = redirectUrl; }, 1000);
+                }
+            } else {
+                // --- REGISTRATION ---
+                const username = document.getElementById('username').value;
+                const referral = document.getElementById('referral').value;
+
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            username: username, 
+                            used_referral: referral || null
+                        }
+                    }
+                });
+
+                if (error) {
+                    msgDiv.style.color = "#EF4444";
+                    msgDiv.innerHTML = "Error: " + error.message;
+                    btn.disabled = false;
+                } else {
+                    msgDiv.style.color = "#10B981";
+                    msgDiv.innerHTML = "Account created! Initializing wallet...";
+                    setTimeout(() => { window.location.href = redirectUrl; }, 1500);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
