@@ -1,215 +1,64 @@
-/* --- RVL GLOBAL THEME --- */
 :root {
     --red: #EF4444;
-    --red-glow: rgba(239, 68, 68, 0.4);
-    --bg-dark: #0B1120;
-    --card-bg: #1E293B;
-    --input-bg: #0F172A;
-    --text-main: #F8FAFC;
-    --text-muted: #94A3B8;
-    --success: #10B981;
+    --bg: #0B1120;
+    --card: #1E293B;
+    --gray: #94A3B8;
+    --green: #10B981;
 }
 
 body {
-    background-color: var(--bg-dark);
-    color: var(--text-main);
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: white;
+    font-family: 'Segoe UI', sans-serif;
     margin: 0;
-    padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
-    overflow-x: hidden;
 }
 
-/* --- SPA VIEW CONTROLLER --- */
-.view {
-    display: none; /* Hidden by default */
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    min-height: 100vh;
-    animation: fadeIn 0.4s ease-out;
-}
+/* View Controller */
+.view { display: none; flex-direction: column; align-items: center; min-height: 100vh; width: 100%; animation: fadeIn 0.3s; }
+.view.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-.view.active {
-    display: flex; /* Shown when active */
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* --- HERO SECTION (HOME) --- */
-.hero {
+/* Cards */
+.card {
+    background: var(--card);
+    padding: 30px;
+    border-radius: 15px;
+    border: 1px solid var(--red);
+    width: 320px;
+    margin-top: 50px;
     text-align: center;
-    padding: 80px 20px;
-    max-width: 600px;
+    box-shadow: 0 0 25px rgba(239,68,68,0.2);
 }
 
 .logo {
-    width: 110px;
-    height: 110px;
+    width: 80px; height: 80px;
     border: 2px solid var(--red);
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--red);
-    font-size: 2rem;
-    font-weight: 900;
-    margin: 0 auto 30px;
-    box-shadow: 0 0 25px var(--red-glow);
-    background: radial-gradient(circle, rgba(239,68,68,0.1) 0%, transparent 70%);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--red); font-size: 1.5rem; font-weight: bold;
+    margin: 0 auto 20px;
 }
 
-.btn-group {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 40px;
-}
+.red-glow { color: var(--red); text-shadow: 0 0 10px var(--red); text-transform: uppercase; letter-spacing: 2px; }
 
-/* --- BUTTON STYLES --- */
-.btn {
-    padding: 14px 28px;
-    border-radius: 8px;
-    font-weight: bold;
-    text-decoration: none;
-    cursor: pointer;
-    border: none;
-    transition: all 0.3s ease;
-    font-size: 1rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-}
+/* Buttons & Inputs */
+.btn { width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; transition: 0.3s; }
+.btn-red { background: var(--red); color: white; }
+.btn-outline { background: transparent; border: 1px solid var(--gray); color: white; }
+.btn-locked { background: transparent; border: 1px solid #334155; color: #475569; cursor: not-allowed; }
+.btn-logout { margin-top: 20px; background: transparent; border: 1px solid var(--red); color: var(--red); }
 
-.btn-red {
-    background: linear-gradient(135deg, var(--red), #B91C1C);
-    color: white;
-    box-shadow: 0 4px 15px var(--red-glow);
-}
+input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #334155; background: #0F172A; color: white; box-sizing: border-box; }
 
-.btn-red:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
-}
-
-.btn-outline {
-    background: transparent;
-    border: 1px solid var(--border-color, #334155);
-    color: var(--text-main);
-}
-
-.btn-outline:hover {
-    background: rgba(255,255,255,0.05);
-}
-
-.btn-profile {
-    border: 1px solid var(--success);
-    background: transparent;
-    color: white;
-}
-
-.btn-profile:hover {
-    background: rgba(16, 185, 129, 0.1);
-}
-
-/* --- CARDS (AUTH & WALLET) --- */
-.card {
-    background: var(--card-bg);
-    padding: 40px;
-    border-radius: 16px;
-    border: 1px solid var(--red);
-    width: 340px;
-    margin-top: 60px;
-    text-align: center;
-    box-shadow: 0 0 30px rgba(239, 68, 68, 0.15);
-    position: relative;
-}
-
-.red-glow {
-    color: var(--red);
-    text-shadow: 0 0 12px var(--red);
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    margin-bottom: 25px;
-}
-
-/* --- FORMS & INPUTS --- */
-input {
-    width: 100%;
-    padding: 14px;
-    margin: 12px 0;
-    border-radius: 8px;
-    border: 1px solid #334155;
-    background: var(--input-bg);
-    color: white;
-    box-sizing: border-box;
-    outline: none;
-    transition: border 0.3s;
-}
-
-input:focus {
-    border-color: var(--red);
-}
-
-.msg {
-    font-size: 0.85rem;
-    min-height: 24px;
-    margin: 15px 0;
-    font-weight: bold;
-}
-
-/* --- WALLET DASHBOARD SPECIFICS --- */
-.pts {
-    font-size: 3.5rem;
-    font-weight: 900;
-    margin: 20px 0 5px;
-    letter-spacing: -2px;
-}
-
-.php {
-    color: var(--success);
-    font-weight: bold;
-    font-size: 1.2rem;
-    margin-bottom: 30px;
-}
-
-/* --- PROGRESS BAR --- */
-.bar-bg {
-    background: var(--input-bg);
-    height: 14px;
-    border-radius: 7px;
-    margin: 12px 0;
-    overflow: hidden;
-    border: 1px solid #334155;
-}
-
-.bar-fill {
-    background: linear-gradient(90deg, #B91C1C, var(--red));
-    height: 100%;
-    width: 0%; /* Controlled by JS */
-    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 10px var(--red);
-}
-
-/* --- UTILITIES --- */
-.reg-only {
-    /* Handled by JS inline display but can be styled here */
-}
-
-.w-100 {
-    width: 100%;
-}
-
-@media (max-width: 400px) {
-    .card {
-        width: 85%;
-        padding: 25px;
-    }
-}
+/* Wallet UI */
+.pts { font-size: 3rem; font-weight: bold; margin: 10px 0; }
+.pts small { font-size: 1rem; color: var(--gray); }
+.php-val { color: var(--green); font-weight: bold; margin-bottom: 10px; }
+.bar-bg { background: #0F172A; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid #334155; margin: 15px 0; }
+.bar-fill { background: var(--red); height: 100%; width: 0%; transition: 1s; }
+#reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 15px; border: 1px solid var(--red); }
+.msg { font-size: 0.8rem; min-height: 20px; font-weight: bold; margin-bottom: 10px; }
+.link-red { color: var(--red); cursor: pointer; font-weight: bold; }
