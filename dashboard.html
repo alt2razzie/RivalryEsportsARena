@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IOS Hub - Dashboard</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* Base Hacker/Esports Dark Theme */
+        body {
+            background-color: #0F172A; 
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* The Glowing Wallet Card */
+        .wallet-container {
+            background: #1E293B; 
+            padding: 40px; 
+            border-radius: 12px;
+            border: 1px solid #EF4444; 
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+            width: 350px; 
+            text-align: center; 
+            margin-bottom: 20px;
+        }
+
+        .esports-red-glow { 
+            color: #EF4444; 
+            text-shadow: 0 0 10px #EF4444; 
+            font-weight: bold; 
+            margin-top: 0;
+            letter-spacing: 2px;
+        }
+
+        /* Balance Text Styling */
+        .points-text { 
+            font-size: 3rem; 
+            font-weight: bold; 
+            display: block; 
+            margin-top: 15px;
+            transition: color 0.3s;
+        }
+        .php-text { 
+            font-size: 1.2rem; 
+            color: #10B981; /* Success Green */
+            font-weight: bold;
+        } 
+        
+        /* Progress Bar */
+        .progress-wrapper { 
+            margin-top: 30px; 
+            text-align: left;
+        }
+        .progress-wrapper small {
+            color: #94A3B8;
+            font-weight: bold;
+        }
+        .progress-bar-bg { 
+            background: #334155; 
+            height: 12px; 
+            border-radius: 6px; 
+            overflow: hidden; 
+            margin-top: 8px; 
+        }
+        .progress-bar-fill { 
+            background: #EF4444; 
+            height: 100%; 
+            width: 0%; 
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
+            box-shadow: 0 0 10px #EF4444;
+        }
+        
+        /* Buttons */
+        .btn { 
+            padding: 15px; 
+            width: 100%; 
+            border: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            margin-top: 25px; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+        .btn-locked { 
+            background: #334155; 
+            color: #94A3B8; 
+            cursor: not-allowed; 
+        }
+        .btn-unlocked { 
+            background: #EF4444; 
+            color: white; 
+            cursor: pointer; 
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); 
+        }
+        .btn-unlocked:hover {
+            background: #DC2626;
+            transform: translateY(-2px);
+        }
+        
+        /* System Notifications */
+        #systemMessage { 
+            margin-top: 10px; 
+            font-weight: bold; 
+            min-height: 24px;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wallet-container">
+        <h2 class="esports-red-glow">IOS HUB WALLET</h2>
+        
+        <div id="systemMessage"></div>
+        
+        <span class="points-text"><span id="pointBalance">0.0</span> Pts</span>
+        <span class="php-text">≈ ₱<span id="phpBalance">0.00</span></span>
+
+        <div class="progress-wrapper">
+            <small>₱200 Cashback Threshold (50 Pts)</small>
+            <div class="progress-bar-bg">
+                <div id="cashbackProgress" class="progress-bar-fill"></div>
+            </div>
+        </div>
+
+        <button id="claimCashbackBtn" class="btn btn-locked" disabled>Locked (Needs 50 Pts)</button>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURATION ---
+        // REPLACE THESE WITH YOUR ACTUAL SUPABASE DETAILS
+        const SUPABASE_URL = 'https://fzsrmnexarqlaawnhmw.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6c3JtbmV4YXJxcmxhYXduaG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTc3NjAsImV4cCI6MjA5MTA3Mzc2MH0.VMN_srt8MBpQBq4F3SlTZJrnubrERF4RIGHG-Qe3dRQ';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // Economy Constants
+        const POINTS_REQUIRED = 50;
+        const PHP_PER_POINT = 4;
+
+        // UI Elements
+        const msgDiv = document.getElementById('systemMessage');
+        const pointBalanceEl = document.getElementById('pointBalance');
+        const phpBalanceEl = document.getElementById('phpBalance');
+        const progressEl = document.getElementById('cashbackProgress');
+        const claimBtn = document.getElementById('claimCashbackBtn');
+
+        // --- 2. MAIN INITIALIZATION ---
+        async function initDashboard() {
+            
+            // Check Authentication
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                // If not logged in, redirect them to your login page.
+                // It's good practice to pass the token in the URL if they are trying to claim.
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+                let redirectUrl = '/login.html';
+                if(token) redirectUrl += `?redirect=/dashboard.html?token=${token}`;
+                
+                window.location.href = redirectUrl;
+                return;
+            }
+
+            // Check for QR Code Token in URL (e.g. ?token=XYZ)
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            if (token) {
+                msgDiv.innerHTML = "Processing token securely...";
+                msgDiv.style.color = "#FCD34D"; // Loading Yellow
+
+                // Call the Unhackable Postgres Function (RPC)
+                const { data: pointsEarned, error } = await supabase.rpc('claim_reward_token', { p_token_id: token });
+
+                if (error) {
+                    msgDiv.innerHTML = "Error: Token invalid or already claimed.";
+                    msgDiv.style.color = "#EF4444"; // Red
+                } else {
+                    msgDiv.innerHTML = `Success! +${pointsEarned.toFixed(1)} Points added.`;
+                    msgDiv.style.color = "#10B981"; // Green
+                    
+                    // Strip the token from the URL so they don't accidentally refresh and get an error
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+                
+                // Clear the success/error message after 5 seconds
+                setTimeout(() => { msgDiv.innerHTML = ""; }, 5000);
+            }
+
+            // Fetch the user's current points to draw the initial UI
+            const { data: profile } = await supabase
+                .from('user_profiles')
+                .select('total_points')
+                .eq('user_id', user.id)
+                .single();
+
+            if (profile) {
+                updateWalletUI(profile.total_points);
+            }
+
+            // --- 3. START REAL-TIME LISTENER ---
+            console.log("Connecting to live server...");
+            
+            supabase
+                .channel('custom-user-profile')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'UPDATE', 
+                        schema: 'public',
+                        table: 'user_profiles',
+                        filter: `user_id=eq.${user.id}` // Only listen to this specific user's row
+                    },
+                    (payload) => {
+                        console.log('Live update received!', payload);
+                        
+                        // Grab the new total points from the database payload
+                        const newPoints = payload.new.total_points;
+                        
+                        // Show a cool notification
+                        msgDiv.innerHTML = "🟢 Live Sync: Balance Updated!";
+                        msgDiv.style.color = "#10B981";
+                        
+                        // Briefly make the points text green to draw attention
+                        pointBalanceEl.parentElement.style.color = "#10B981";
+                        setTimeout(() => { pointBalanceEl.parentElement.style.color = "white"; }, 1000);
+                        
+                        // Redraw the UI with the new data
+                        updateWalletUI(newPoints);
+                        
+                        // Clear notification after 3 seconds
+                        setTimeout(() => { 
+                            if(msgDiv.innerHTML.includes("Live Sync")) msgDiv.innerHTML = ""; 
+                        }, 3000);
+                    }
+                )
+                .subscribe();
+        }
+
+        // --- 4. UI RENDER ENGINE ---
+        // This function handles all the math for display and updates the DOM
+        function updateWalletUI(points) {
+            // Convert to PHP
+            const phpValue = points * PHP_PER_POINT;
+            
+            // Update Text
+            pointBalanceEl.innerText = points.toFixed(1);
+            phpBalanceEl.innerText = phpValue.toFixed(2);
+
+            // Calculate Progress Bar Width (Caps at 100%)
+            let progress = (points / POINTS_REQUIRED) * 100;
+            progressEl.style.width = `${Math.min(progress, 100)}%`;
+
+            // Check if they unlocked the reward
+            if (points >= POINTS_REQUIRED) {
+                claimBtn.disabled = false;
+                claimBtn.className = "btn btn-unlocked";
+                claimBtn.innerText = "CLAIM ₱200 CASHBACK";
+                
+                // Add your logic here for what happens when they click claim
+                claimBtn.onclick = () => {
+                    alert("Reward Claim Initiated! Deducting 50 points (Requires Backend RPC)...");
+                    // Here you would call another Supabase RPC to deduct points and alert admins
+                };
+            } else {
+                claimBtn.disabled = true;
+                claimBtn.className = "btn btn-locked";
+                claimBtn.innerText = `Locked (Needs ${POINTS_REQUIRED} Pts)`;
+            }
+        }
+
+        // Boot up the dashboard when the page loads
+        window.onload = initDashboard;
+    </script>
+</body>
+</html>
