@@ -1,64 +1,224 @@
+/* --- 1. CORE THEME & RESET --- */
 :root {
     --red: #EF4444;
-    --bg: #0B1120;
-    --card: #1E293B;
-    --gray: #94A3B8;
-    --green: #10B981;
+    --red-glow: rgba(239, 68, 68, 0.4);
+    --bg-dark: #0B1120;
+    --card-bg: #1E293B;
+    --input-bg: #0F172A;
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --success: #10B981;
+}
+
+* {
+    box-sizing: border-box; /* Prevents padding from breaking layout */
 }
 
 body {
-    background: var(--bg);
-    color: white;
-    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: 'Segoe UI', Roboto, sans-serif;
     margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+/* --- 2. VIEW CONTROLLER (SPA LOGIC) --- */
+.view {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.view.active {
+    display: flex; /* Shown via app.js */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- 3. HOME & HERO ALIGNMENT --- */
+.hero {
+    text-align: center;
+    padding-top: 60px;
+    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-/* View Controller */
-.view { display: none; flex-direction: column; align-items: center; min-height: 100vh; width: 100%; animation: fadeIn 0.3s; }
-.view.active { display: flex; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-/* Cards */
-.card {
-    background: var(--card);
-    padding: 30px;
-    border-radius: 15px;
-    border: 1px solid var(--red);
-    width: 320px;
-    margin-top: 50px;
-    text-align: center;
-    box-shadow: 0 0 25px rgba(239,68,68,0.2);
-}
-
 .logo {
-    width: 80px; height: 80px;
+    width: 90px;
+    height: 90px;
     border: 2px solid var(--red);
     border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--red); font-size: 1.5rem; font-weight: bold;
-    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--red);
+    font-size: 1.8rem;
+    font-weight: 900;
+    margin-bottom: 25px;
+    box-shadow: 0 0 20px var(--red-glow);
 }
 
-.red-glow { color: var(--red); text-shadow: 0 0 10px var(--red); text-transform: uppercase; letter-spacing: 2px; }
+h1 {
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin: 10px 0;
+    font-size: 1.8rem;
+}
 
-/* Buttons & Inputs */
-.btn { width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; margin-top: 10px; transition: 0.3s; }
-.btn-red { background: var(--red); color: white; }
-.btn-outline { background: transparent; border: 1px solid var(--gray); color: white; }
-.btn-locked { background: transparent; border: 1px solid #334155; color: #475569; cursor: not-allowed; }
-.btn-logout { margin-top: 20px; background: transparent; border: 1px solid var(--red); color: var(--red); }
+/* --- 4. BUTTON GROUP (THE FIX FOR OVERLAPPING) --- */
+.btn-group {
+    display: flex;
+    flex-direction: column; /* Stacks buttons vertically */
+    gap: 15px;             /* Creates equal space between them */
+    width: 100%;
+    max-width: 320px;      /* Keeps buttons a consistent width */
+    margin-top: 40px;
+}
 
-input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #334155; background: #0F172A; color: white; box-sizing: border-box; }
+.btn {
+    width: 100%;           /* Makes all buttons the same length */
+    padding: 16px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 1rem;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    transition: 0.3s;
+    display: block;        /* Ensures it takes up full group width */
+}
 
-/* Wallet UI */
-.pts { font-size: 3rem; font-weight: bold; margin: 10px 0; }
-.pts small { font-size: 1rem; color: var(--gray); }
-.php-val { color: var(--green); font-weight: bold; margin-bottom: 10px; }
-.bar-bg { background: #0F172A; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid #334155; margin: 15px 0; }
-.bar-fill { background: var(--red); height: 100%; width: 0%; transition: 1s; }
-#reader { width: 100%; border-radius: 10px; overflow: hidden; margin-bottom: 15px; border: 1px solid var(--red); }
-.msg { font-size: 0.8rem; min-height: 20px; font-weight: bold; margin-bottom: 10px; }
-.link-red { color: var(--red); cursor: pointer; font-weight: bold; }
+.btn-red {
+    background: var(--red);
+    color: white;
+    box-shadow: 0 4px 15px var(--red-glow);
+}
+
+.btn-red:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--gray);
+    color: white;
+}
+
+.btn-outline:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+/* --- 5. CARDS (AUTH, WALLET, SCANNER) --- */
+.card {
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 16px;
+    border: 1px solid var(--red);
+    width: 100%;
+    max-width: 340px;
+    margin-top: 40px;
+    text-align: center;
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
+}
+
+.red-glow {
+    color: var(--red);
+    text-shadow: 0 0 10px var(--red);
+    margin-bottom: 20px;
+}
+
+/* --- 6. INPUTS & FORM ELEMENTS --- */
+input {
+    width: 100%;
+    padding: 14px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: var(--input-bg);
+    color: white;
+    outline: none;
+}
+
+input:focus {
+    border-color: var(--red);
+}
+
+.msg {
+    font-size: 0.85rem;
+    min-height: 20px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+/* --- 7. WALLET & PROGRESS BAR --- */
+.pts {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin: 15px 0;
+}
+
+.pts small {
+    font-size: 1.2rem;
+    color: var(--gray);
+}
+
+.php-val {
+    color: var(--success);
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.bar-bg {
+    background: var(--input-bg);
+    height: 14px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #334155;
+    margin: 20px 0;
+}
+
+.bar-fill {
+    background: var(--red);
+    height: 100%;
+    width: 0%; /* Updated by app.js */
+    transition: width 1s ease-in-out;
+}
+
+/* --- 8. SCANNER UI --- */
+#reader {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--red);
+    margin-bottom: 20px;
+}
+
+.btn-logout {
+    margin-top: 30px;
+    border: 1px solid var(--red);
+    color: var(--red);
+    background: transparent;
+}
+
+.link-red {
+    color: var(--red);
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: underline;
+}
