@@ -1,224 +1,169 @@
-/* --- 1. CORE THEME & RESET --- */
+/* --- CORE GAMING THEME VARIABLES --- */
 :root {
-    --red: #EF4444;
-    --red-glow: rgba(239, 68, 68, 0.4);
-    --bg-dark: #0B1120;
-    --card-bg: #1E293B;
-    --input-bg: #0F172A;
+    --red-primary: #EF4444;
+    --red-dark: #7F1D1D;
+    --red-glow: rgba(239, 68, 68, 0.6);
+    --bg-deep: #050508;
+    --card-glass: rgba(15, 23, 42, 0.7);
+    --input-bg: rgba(0, 0, 0, 0.5);
     --text-main: #F8FAFC;
-    --text-muted: #94A3B8;
     --success: #10B981;
 }
 
-* {
-    box-sizing: border-box; /* Prevents padding from breaking layout */
+* { 
+    box-sizing: border-box; 
+    font-family: 'Rajdhani', sans-serif;
 }
 
 body {
-    background-color: var(--bg-dark);
+    /* The core visual upgrade: A deep radial gradient */
+    background: radial-gradient(circle at 50% 0%, #2A0810 0%, var(--bg-deep) 70%);
     color: var(--text-main);
-    font-family: 'Segoe UI', Roboto, sans-serif;
     margin: 0;
-    padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
+    background-attachment: fixed;
 }
 
-/* --- 2. VIEW CONTROLLER (SPA LOGIC) --- */
+/* --- VIEW CONTROLLER --- */
 .view {
-    display: none; /* Hidden by default */
+    display: none;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 500px;
+    max-width: 450px;
     padding: 20px;
-    animation: fadeIn 0.3s ease-out;
+    animation: glitchFade 0.4s ease-out;
 }
 
-.view.active {
-    display: flex; /* Shown via app.js */
+.view.active { display: flex; }
+
+@keyframes glitchFade {
+    0% { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(4px); }
+    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+/* --- LOGO & HERO --- */
+.hero { text-align: center; padding-top: 8vh; width: 100%; }
 
-/* --- 3. HOME & HERO ALIGNMENT --- */
-.hero {
-    text-align: center;
-    padding-top: 60px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.logo-container { position: relative; margin: 0 auto 30px; width: 110px; height: 110px; }
+
+.logo-glow {
+    position: absolute; width: 100%; height: 100%;
+    background: var(--red-primary); filter: blur(30px);
+    opacity: 0.4; border-radius: 50%;
+    animation: pulseGlow 2s infinite alternate;
 }
 
 .logo {
-    width: 90px;
-    height: 90px;
-    border: 2px solid var(--red);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--red);
-    font-size: 1.8rem;
-    font-weight: 900;
-    margin-bottom: 25px;
-    box-shadow: 0 0 20px var(--red-glow);
+    position: relative; width: 110px; height: 110px;
+    border: 3px solid var(--red-primary); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--red-primary); font-size: 2.5rem; font-weight: 700;
+    background: rgba(0,0,0,0.8); letter-spacing: 2px;
 }
 
-h1 {
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    margin: 10px 0;
-    font-size: 1.8rem;
+@keyframes pulseGlow {
+    from { opacity: 0.3; transform: scale(0.9); }
+    to { opacity: 0.6; transform: scale(1.1); }
 }
 
-/* --- 4. BUTTON GROUP (THE FIX FOR OVERLAPPING) --- */
-.btn-group {
-    display: flex;
-    flex-direction: column; /* Stacks buttons vertically */
-    gap: 15px;             /* Creates equal space between them */
+h1 { 
+    font-size: 2.5rem; margin: 0; 
+    background: linear-gradient(to right, #fff, #94A3B8);
+    -webkit-background-clip: text; color: transparent;
+    letter-spacing: 4px;
+}
+.subtitle { color: var(--red-primary); font-weight: 600; letter-spacing: 5px; margin-top: 5px; }
+
+/* --- GLASSMORPHISM CARDS --- */
+.glass-panel {
+    background: var(--card-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(239, 68, 68, 0.05);
+    padding: 35px 25px;
+    border-radius: 20px;
     width: 100%;
-    max-width: 320px;      /* Keeps buttons a consistent width */
-    margin-top: 40px;
+    margin-top: 30px;
+    text-align: center;
 }
+
+.neon-text { 
+    color: white; text-transform: uppercase; letter-spacing: 3px; 
+    font-size: 2rem; margin-bottom: 25px;
+    text-shadow: 0 0 15px var(--red-glow);
+}
+
+/* --- GAMING INPUTS --- */
+input {
+    width: 100%; padding: 16px; margin: 10px 0;
+    border-radius: 8px; border: 1px solid #334155;
+    background: var(--input-bg); color: white;
+    font-size: 1.1rem; font-weight: 600; letter-spacing: 1px;
+    outline: none; transition: 0.3s;
+}
+input:focus { border-color: var(--red-primary); box-shadow: 0 0 15px rgba(239, 68, 68, 0.2); }
+input::placeholder { color: #64748B; font-weight: 500; }
+
+/* --- DYNAMIC BUTTONS --- */
+.btn-group { display: flex; flex-direction: column; gap: 15px; margin-top: 40px; }
 
 .btn {
-    width: 100%;           /* Makes all buttons the same length */
-    padding: 16px;
-    border-radius: 10px;
-    font-weight: bold;
-    font-size: 1rem;
-    text-align: center;
-    text-decoration: none;
-    text-transform: uppercase;
-    cursor: pointer;
-    border: none;
-    transition: 0.3s;
-    display: block;        /* Ensures it takes up full group width */
+    width: 100%; padding: 18px; border-radius: 10px;
+    font-size: 1.2rem; font-weight: 700; letter-spacing: 2px;
+    text-align: center; text-transform: uppercase;
+    cursor: pointer; border: none; transition: all 0.3s ease;
 }
 
-.btn-red {
-    background: var(--red);
-    color: white;
-    box-shadow: 0 4px 15px var(--red-glow);
+.btn-red { 
+    background: linear-gradient(135deg, var(--red-primary) 0%, var(--red-dark) 100%);
+    color: white; box-shadow: 0 4px 20px var(--red-glow);
+    border: 1px solid #F87171;
+}
+.btn-red:hover { 
+    transform: translateY(-3px); 
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.8); 
+    filter: brightness(1.2);
 }
 
-.btn-red:hover {
-    transform: scale(1.02);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+.btn-outline { background: rgba(0,0,0,0.3); border: 1px solid #64748B; color: #E2E8F0; }
+.btn-outline:hover { background: rgba(255,255,255,0.1); border-color: white; }
+
+.btn-locked { background: #0F172A; border: 1px solid #334155; color: #475569; cursor: not-allowed; }
+.btn-logout { margin-top: 30px; border: 1px solid var(--red-primary); color: var(--red-primary); background: transparent; }
+.btn-scan { font-size: 1.4rem; padding: 20px; }
+
+/* --- IOS WALLET VISUALS --- */
+.pts-container { display: flex; align-items: baseline; justify-content: center; gap: 5px; margin: 15px 0; }
+.pts { font-size: 4.5rem; font-weight: 700; text-shadow: 0 0 20px rgba(255,255,255,0.2); line-height: 1; }
+.pts-label { font-size: 1.5rem; color: var(--red-primary); font-weight: 700; }
+
+.php-val { color: var(--success); font-weight: 700; font-size: 1.1rem; margin-bottom: 25px; letter-spacing: 1px;}
+
+.progress-container { margin: 30px 0; }
+.bar-bg { 
+    background: rgba(0,0,0,0.6); height: 18px; border-radius: 10px; 
+    overflow: hidden; border: 1px solid #334155; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+}
+.bar-fill { 
+    background: linear-gradient(90deg, #991B1B 0%, var(--red-primary) 100%);
+    height: 100%; width: 0%; transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1); 
+    box-shadow: 0 0 15px var(--red-primary);
+}
+.progress-target { text-align: right; font-size: 0.85rem; color: #64748B; margin-top: 8px; font-weight: 600; }
+
+/* --- SCANNER --- */
+.scanner-frame { 
+    width: 100%; border-radius: 15px; overflow: hidden; 
+    border: 2px solid var(--red-primary); margin-bottom: 20px; 
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.3);
 }
 
-.btn-outline {
-    background: transparent;
-    border: 1px solid var(--gray);
-    color: white;
-}
-
-.btn-outline:hover {
-    background: rgba(255,255,255,0.05);
-}
-
-/* --- 5. CARDS (AUTH, WALLET, SCANNER) --- */
-.card {
-    background: var(--card-bg);
-    padding: 30px;
-    border-radius: 16px;
-    border: 1px solid var(--red);
-    width: 100%;
-    max-width: 340px;
-    margin-top: 40px;
-    text-align: center;
-    box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
-}
-
-.red-glow {
-    color: var(--red);
-    text-shadow: 0 0 10px var(--red);
-    margin-bottom: 20px;
-}
-
-/* --- 6. INPUTS & FORM ELEMENTS --- */
-input {
-    width: 100%;
-    padding: 14px;
-    margin: 10px 0;
-    border-radius: 8px;
-    border: 1px solid #334155;
-    background: var(--input-bg);
-    color: white;
-    outline: none;
-}
-
-input:focus {
-    border-color: var(--red);
-}
-
-.msg {
-    font-size: 0.85rem;
-    min-height: 20px;
-    margin-bottom: 10px;
-    font-weight: bold;
-}
-
-/* --- 7. WALLET & PROGRESS BAR --- */
-.pts {
-    font-size: 3.5rem;
-    font-weight: 800;
-    margin: 15px 0;
-}
-
-.pts small {
-    font-size: 1.2rem;
-    color: var(--gray);
-}
-
-.php-val {
-    color: var(--success);
-    font-weight: bold;
-    margin-bottom: 20px;
-}
-
-.bar-bg {
-    background: var(--input-bg);
-    height: 14px;
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #334155;
-    margin: 20px 0;
-}
-
-.bar-fill {
-    background: var(--red);
-    height: 100%;
-    width: 0%; /* Updated by app.js */
-    transition: width 1s ease-in-out;
-}
-
-/* --- 8. SCANNER UI --- */
-#reader {
-    width: 100%;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid var(--red);
-    margin-bottom: 20px;
-}
-
-.btn-logout {
-    margin-top: 30px;
-    border: 1px solid var(--red);
-    color: var(--red);
-    background: transparent;
-}
-
-.link-red {
-    color: var(--red);
-    cursor: pointer;
-    font-weight: bold;
-    text-decoration: underline;
-}
+.msg { font-size: 1rem; min-height: 24px; margin-bottom: 15px; font-weight: 600; letter-spacing: 1px; }
+.toggle-text { margin-top: 20px; color: #94A3B8; font-size: 1rem; }
+.link-red { color: var(--red-primary); cursor: pointer; font-weight: 700; margin-left: 5px; }
