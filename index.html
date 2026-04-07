@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RVL Hub - Rivalry Esports Arena</title>
+    <title>IOS Hub - Rivalry Esports Arena</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link rel="stylesheet" href="style.css">
 </head>
@@ -15,51 +17,70 @@
 
     <div id="home-view" class="view active">
         <div class="hero">
-            <div class="logo">RVL</div>
+            <div class="logo-container">
+                <div class="logo-glow"></div>
+                <div class="logo">IOS</div>
+            </div>
             <h1>RIVALRY ESPORTS</h1>
+            <p class="subtitle">ARENA HUB INTERFACE</p>
             <div class="btn-group">
-                <button onclick="navigateTo('auth')" class="btn btn-red">MY PROFILE</button>
+                <button onclick="navigateTo('auth')" class="btn btn-red">ACCESS PROFILE</button>
                 <a href="https://facebook.com/yourpage" target="_blank" class="btn btn-outline">FOLLOW US</a>
             </div>
         </div>
     </div>
 
     <div id="auth-view" class="view">
-        <div class="card">
-            <h2 id="authTitle" class="red-glow">RVL Login</h2>
+        <div class="card glass-panel">
+            <h2 id="authTitle" class="neon-text">IOS Login</h2>
             <div id="authMsg" class="msg"></div>
-            <input type="text" id="regUser" style="display:none" placeholder="Gamer Tag">
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Password">
-            <button onclick="handleAuth()" id="authBtn" class="btn btn-red">Sign In</button>
+            
+            <input type="text" id="regUser" style="display:none" placeholder="GAMER TAG">
+            <input type="email" id="email" placeholder="EMAIL ADDRESS">
+            <input type="password" id="password" placeholder="PASSWORD">
+            
+            <button onclick="handleAuth()" id="authBtn" class="btn btn-red">INITIALIZE</button>
+            
             <p class="toggle-text">
-                <span id="toggleText">New player?</span> 
-                <span onclick="toggleAuth()" class="link-red">Create Account</span>
+                <span id="toggleText">New to the arena?</span> 
+                <span onclick="toggleAuth()" class="link-red">Register Here</span>
             </p>
-            <button onclick="navigateTo('home')" class="btn btn-outline">Back</button>
+            <button onclick="navigateTo('home')" class="btn btn-outline">BACK TO SYSTEM</button>
         </div>
     </div>
 
     <div id="scanner-view" class="view">
-        <div class="card">
-            <h2 class="red-glow">SCAN PC</h2>
-            <div id="reader"></div>
-            <div id="scanMsg" class="msg">Align QR code within frame</div>
-            <button onclick="stopScanner(); navigateTo('wallet')" class="btn btn-outline">Cancel</button>
+        <div class="card glass-panel">
+            <h2 class="neon-text">SCAN TERMINAL</h2>
+            <div id="reader" class="scanner-frame"></div>
+            <div id="scanMsg" class="msg">ALIGN QR WITHIN FRAME</div>
+            <button onclick="stopScanner(); navigateTo('wallet')" class="btn btn-outline">ABORT SCAN</button>
         </div>
     </div>
 
     <div id="wallet-view" class="view">
-        <div class="card">
-            <h2 class="red-glow">RVL Wallet</h2>
+        <div class="card glass-panel">
+            <h2 class="neon-text">IOS WALLET</h2>
             <div id="walletMsg" class="msg"></div>
-            <div class="pts"><span id="valPoints">0.0</span> <small>Pts</small></div>
-            <div class="php-val">≈ ₱<span id="valPhp">0.00</span></div>
-            <div class="bar-bg"><div id="bar" class="bar-fill"></div></div>
             
-            <button onclick="startScanner()" class="btn btn-red"><i class="fas fa-camera"></i> SCAN TO CLAIM</button>
-            <button id="claimBtn" class="btn btn-locked" disabled>Reward Locked</button>
-            <button onclick="handleLogout()" class="btn btn-logout">Sign Out</button>
+            <div class="pts-container">
+                <span id="valPoints" class="pts">0.0</span>
+                <span class="pts-label">PTS</span>
+            </div>
+            <div class="php-val">EST VALUE: ₱<span id="valPhp">0.00</span></div>
+            
+            <div class="progress-container">
+                <div class="bar-bg"><div id="bar" class="bar-fill"></div></div>
+                <div class="progress-target">TARGET: 50 PTS</div>
+            </div>
+            
+            <button onclick="startScanner()" class="btn btn-red btn-scan">
+                <i class="fas fa-crosshairs"></i> SCAN TERMINAL
+            </button>
+            
+            <button id="claimBtn" class="btn btn-locked" disabled>REWARD LOCKED</button>
+            
+            <button onclick="handleLogout()" class="btn btn-logout">TERMINATE SESSION</button>
         </div>
     </div>
 
