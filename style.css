@@ -16,7 +16,6 @@
 }
 
 body {
-    /* The core visual upgrade: A deep radial gradient */
     background: radial-gradient(circle at 50% 0%, #2A0810 0%, var(--bg-deep) 70%);
     color: var(--text-main);
     margin: 0;
@@ -138,7 +137,7 @@ input::placeholder { color: #64748B; font-weight: 500; }
 .btn-logout { margin-top: 30px; border: 1px solid var(--red-primary); color: var(--red-primary); background: transparent; }
 .btn-scan { font-size: 1.4rem; padding: 20px; }
 
-/* --- IOS WALLET VISUALS --- */
+/* --- WALLET VISUALS --- */
 .pts-container { display: flex; align-items: baseline; justify-content: center; gap: 5px; margin: 15px 0; }
 .pts { font-size: 4.5rem; font-weight: 700; text-shadow: 0 0 20px rgba(255,255,255,0.2); line-height: 1; }
 .pts-label { font-size: 1.5rem; color: var(--red-primary); font-weight: 700; }
