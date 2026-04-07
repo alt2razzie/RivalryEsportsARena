@@ -4,17 +4,17 @@ const CONF = {
 };
 
 let user = null;
+let userProfile = null;
 let isLogin = true;
 let html5QrCode = null;
-let pendingToken = new URLSearchParams(window.location.search).get('token');
 let currentAuthEmail = ""; 
+let pendingToken = new URLSearchParams(window.location.search).get('token');
 
 const db = supabase.createClient(CONF.URL, CONF.KEY);
 
 function navigateTo(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    const target = document.getElementById(id + '-view');
-    if (target) target.classList.add('active');
+    document.getElementById(id + '-view').classList.add('active');
     
     if (id === 'wallet' && user) loadWallet();
     if (id === 'scanner') document.getElementById('manualTokenInput').value = "";
@@ -22,36 +22,35 @@ function navigateTo(id) {
 
 function toggleAuth() {
     isLogin = !isLogin;
+    document.getElementById('authTitle').innerText = isLogin ? 'RVL LOGIN' : 'RVL REGISTER';
+    document.getElementById('authBtn').innerText = isLogin ? 'INITIALIZE' : 'CREATE ID';
+    document.getElementById('toggleText').innerText = isLogin ? "New to the arena?" : "Already registered?";
     
-    const title = document.getElementById('authTitle');
-    const btn = document.getElementById('authBtn');
-    const toggleText = document.getElementById('toggleText');
-    const regField = document.getElementById('regUser');
-    const forgotLink = document.getElementById('forgotLink');
-
-    title.innerText = isLogin ? 'RVL LOGIN' : 'RVL REGISTER';
-    btn.innerText = isLogin ? 'INITIALIZE' : 'CREATE ID';
-    toggleText.innerText = isLogin ? "New to the arena?" : "Already registered?";
-    
-    if (regField) regField.style.display = isLogin ? 'none' : 'block';
-    if (forgotLink) forgotLink.style.display = isLogin ? 'block' : 'none';
+    document.getElementById('emailOrNick').placeholder = isLogin ? "EMAIL OR GAMER TAG" : "CHOOSE GAMER TAG";
+    document.getElementById('regFields').style.display = isLogin ? 'none' : 'block';
+    document.getElementById('forgotLink').style.display = isLogin ? 'block' : 'none';
 }
 
-// --- 1. CORE AUTHENTICATION ---
+// --- 1. CORE AUTH & RECOVERY ---
 async function handleAuth() {
-    const email = document.getElementById('email').value.trim();
+    const primaryInput = document.getElementById('emailOrNick').value.trim();
     const pass = document.getElementById('password').value;
     const msg = document.getElementById('authMsg');
     
-    if(!email || !pass) { msg.innerText = "FILL ALL FIELDS"; msg.style.color = '#EF4444'; return; }
+    if(!primaryInput || !pass) { msg.innerText = "FILL ALL FIELDS"; msg.style.color = '#EF4444'; return; }
     
     msg.innerText = "AUTHENTICATING...";
     msg.style.color = "white";
-    currentAuthEmail = email; 
     
-    let res;
     if (isLogin) {
-        res = await db.auth.signInWithPassword({ email, password: pass });
+        let loginEmail = primaryInput;
+        if (!primaryInput.includes('@')) {
+            const { data, error } = await db.rpc('get_email_from_nickname', { p_nickname: primaryInput });
+            if (data) loginEmail = data;
+            else { msg.innerText = "GAMER TAG NOT FOUND"; msg.style.color = '#EF4444'; return; }
+        }
+        
+        const res = await db.auth.signInWithPassword({ email: loginEmail, password: pass });
         if (res.error) {
             msg.innerText = res.error.message.toUpperCase();
             msg.style.color = '#EF4444';
@@ -61,15 +60,19 @@ async function handleAuth() {
             if (pendingToken) claim(pendingToken);
         }
     } else {
-        const username = document.getElementById('regUser').value;
-        res = await db.auth.signUp({ email, password: pass, options: { data: { username: username } } });
+        const email = document.getElementById('regEmail').value.trim();
+        const refCode = document.getElementById('refCodeInput').value.trim().toUpperCase();
+        
+        const res = await db.auth.signUp({ 
+            email: email, password: pass, 
+            options: { data: { nickname: primaryInput, referred_by: refCode } } 
+        });
         
         if (res.error) {
             msg.innerText = res.error.message.toUpperCase();
             msg.style.color = '#EF4444';
         } else {
-            document.getElementById('email').value = "";
-            document.getElementById('password').value = "";
+            currentAuthEmail = email;
             navigateTo('otp');
             document.getElementById('otpMsg').innerText = "OTP SENT TO EMAIL.";
             document.getElementById('otpMsg').style.color = "var(--success)";
@@ -77,22 +80,13 @@ async function handleAuth() {
     }
 }
 
-// --- 2. OTP VERIFICATION ---
 async function verifyOTP() {
     const code = document.getElementById('otpCode').value.trim();
     const msg = document.getElementById('otpMsg');
     
-    if(!code) { msg.innerText = "ENTER CODE"; msg.style.color = "#EF4444"; return; }
+    msg.innerText = "VERIFYING..."; msg.style.color = "white";
     
-    msg.innerText = "VERIFYING...";
-    msg.style.color = "white";
-
-    const { data, error } = await db.auth.verifyOtp({
-        email: currentAuthEmail,
-        token: code,
-        type: 'signup'
-    });
-
+    const { data, error } = await db.auth.verifyOtp({ email: currentAuthEmail, token: code, type: 'signup' });
     if (error) {
         msg.innerText = "INVALID OR EXPIRED CODE";
         msg.style.color = '#EF4444';
@@ -103,25 +97,18 @@ async function verifyOTP() {
     }
 }
 
-// --- 3. FORGOT PASSWORD PROTOCOL ---
 async function sendResetCode() {
     const email = document.getElementById('forgotEmail').value.trim();
     const msg = document.getElementById('forgotMsg');
-    
     if(!email) { msg.innerText = "ENTER EMAIL"; msg.style.color = "#EF4444"; return; }
     
-    msg.innerText = "COMMUNICATING WITH SERVER...";
-    msg.style.color = "white";
+    msg.innerText = "COMMUNICATING WITH SERVER..."; msg.style.color = "white";
     currentAuthEmail = email;
 
     const { error } = await db.auth.resetPasswordForEmail(email);
-
-    if (error) {
-        msg.innerText = error.message.toUpperCase();
-        msg.style.color = '#EF4444';
-    } else {
-        msg.innerText = "RESET CODE SENT TO EMAIL.";
-        msg.style.color = 'var(--success)';
+    if (error) { msg.innerText = error.message.toUpperCase(); msg.style.color = '#EF4444'; } 
+    else {
+        msg.innerText = "RESET CODE SENT TO EMAIL."; msg.style.color = 'var(--success)';
         document.getElementById('resetCodeSection').style.display = 'block';
     }
 }
@@ -132,62 +119,106 @@ async function submitNewPassword() {
     const msg = document.getElementById('forgotMsg');
 
     if(!code || !newPass) { msg.innerText = "FILL ALL FIELDS"; msg.style.color = "#EF4444"; return; }
-
-    msg.innerText = "UPDATING SECURITY CREDENTIALS...";
-    msg.style.color = "white";
+    msg.innerText = "UPDATING SECURITY CREDENTIALS..."; msg.style.color = "white";
 
     const { error: verifyError } = await db.auth.verifyOtp({ email: currentAuthEmail, token: code, type: 'recovery' });
-
-    if (verifyError) {
-        msg.innerText = "INVALID RECOVERY CODE";
-        msg.style.color = '#EF4444';
-        return;
-    }
+    if (verifyError) { msg.innerText = "INVALID RECOVERY CODE"; msg.style.color = '#EF4444'; return; }
 
     const { error: updateError } = await db.auth.updateUser({ password: newPass });
-
-    if (updateError) {
-        msg.innerText = updateError.message.toUpperCase();
-        msg.style.color = '#EF4444';
-    } else {
-        msg.innerText = "PASSWORD UPDATED. YOU MAY LOG IN.";
-        msg.style.color = 'var(--success)';
+    if (updateError) { msg.innerText = updateError.message.toUpperCase(); msg.style.color = '#EF4444'; } 
+    else {
+        msg.innerText = "PASSWORD UPDATED. YOU MAY LOG IN."; msg.style.color = 'var(--success)';
         setTimeout(() => { navigateTo('auth'); }, 2000);
     }
 }
 
-// --- 4. WALLET & CLAIM PROTOCOL ---
+// --- 2. WALLET, STREAKS & INVENTORY ---
 async function loadWallet() {
     if (!user) return;
-    const { data } = await db.from('user_profiles').select('total_points').eq('user_id', user.id).single();
-    if (data) updateUI(data.total_points);
-
-    db.channel('wallet-sync').on('postgres_changes', { 
-        event: 'UPDATE', schema: 'public', table: 'user_profiles', filter: `user_id=eq.${user.id}` 
-    }, payload => updateUI(payload.new.total_points)).subscribe();
-}
-
-function updateUI(pts) {
-    document.getElementById('valPoints').innerText = pts.toFixed(1);
-    document.getElementById('valPhp').innerText = (pts * 4).toFixed(2);
+    const { data } = await db.from('user_profiles').select('*').eq('user_id', user.id).single();
     
-    const per = Math.min((pts / 50) * 100, 100);
-    document.getElementById('bar').style.width = per + "%";
-    
-    const btn = document.getElementById('claimBtn');
-    if (pts >= 50) {
-        btn.disabled = false;
-        btn.innerText = "EXTRACT ₱200 REWARD";
-        btn.className = "btn btn-red"; 
+    if (data) {
+        userProfile = data;
+        document.getElementById('valPoints').innerText = data.total_points.toFixed(1);
+        document.getElementById('valPhp').innerText = (data.total_points * 4).toFixed(2);
+        document.getElementById('myRefCode').innerText = data.referral_code || "GENERATING...";
+        document.getElementById('streakCount').innerText = `${data.streak_days} DAYS`;
+        document.getElementById('potionCount').innerText = `🧪 ${data.boost_inventory}x BOOST POTIONS`;
+        
+        const streakBtn = document.getElementById('streakBtn');
+        if (data.today_play_seconds >= 14400) { 
+            const today = new Date().toLocaleDateString('en-CA', {timeZone: 'Asia/Manila'});
+            if (data.streak_claim_date !== today) {
+                streakBtn.style.display = 'block';
+                streakBtn.innerText = "🎁 CLAIM +2 PTS (STREAK MET)";
+                streakBtn.style.background = "rgba(16, 185, 129, 0.1)";
+                streakBtn.style.borderColor = "#10B981";
+                streakBtn.style.color = "#10B981";
+                streakBtn.disabled = false;
+            } else {
+                streakBtn.style.display = 'block';
+                streakBtn.innerText = "✓ STREAK CLAIMED TODAY";
+                streakBtn.style.background = "transparent";
+                streakBtn.style.borderColor = "#334155";
+                streakBtn.style.color = "#64748B";
+                streakBtn.disabled = true;
+            }
+        } else {
+            streakBtn.style.display = 'none';
+        }
     }
 }
 
-// --- 5. DATA EXTRACTION (QR & MANUAL) ---
+async function claimStreak() {
+    const { data, error } = await db.rpc('claim_streak_bonus');
+    if (data) {
+        document.getElementById('walletMsg').innerText = "+2 PTS STREAK BONUS ACQUIRED!";
+        document.getElementById('walletMsg').style.color = "#10B981";
+        loadWallet();
+    }
+}
+
+// --- 3. TOP 10 LEADERBOARDS ---
+async function loadLeaderboard() {
+    navigateTo('leaderboard');
+    const lb = document.getElementById('lbContainer');
+    lb.innerHTML = "<p style='text-align:center;'>LOADING RANKINGS...</p>";
+    
+    const { data } = await db.from('user_profiles').select('nickname, total_points').order('total_points', { ascending: false }).limit(10);
+    
+    if (data) {
+        lb.innerHTML = data.map((u, i) => {
+            let rankClass = "lb-row ";
+            if(i === 0) rankClass += "gold";
+            else if(i === 1) rankClass += "silver";
+            else if(i === 2) rankClass += "bronze";
+
+            return `
+            <div class="${rankClass}">
+                <span>#${i+1} ${u.nickname}</span>
+                <span>${u.total_points.toFixed(1)} PTS</span>
+            </div>
+        `}).join('');
+    }
+}
+
+// --- 4. DATA EXTRACTION & POTION LOGIC ---
 async function startScanner() {
     navigateTo('scanner');
     document.getElementById('scanMsg').innerText = "ALIGN QR WITHIN FRAME";
     document.getElementById('scanMsg').style.color = "white";
     
+    // SECURITY GATE: Only shows the Potion box if the database says they have > 0 potions
+    const potionBox = document.getElementById('potionSection');
+    const potionCheck = document.getElementById('usePotionToggle');
+    potionCheck.checked = false; // Always uncheck by default
+    
+    if(userProfile && userProfile.boost_inventory > 0) {
+        potionBox.style.display = 'block';
+    } else {
+        potionBox.style.display = 'none';
+    }
+
     html5QrCode = new Html5Qrcode("reader");
     const config = { fps: 15, qrbox: { width: 250, height: 250 } };
     
@@ -208,27 +239,34 @@ function stopScanner() {
 }
 
 function claimManual() {
-    const manualToken = document.getElementById('manualTokenInput').value.trim().toUpperCase();
-    if (!manualToken) {
+    const hash = document.getElementById('manualTokenInput').value.trim().toUpperCase();
+    if (!hash) {
         document.getElementById('scanMsg').innerText = "ENTER A HASH CODE FIRST";
         document.getElementById('scanMsg').style.color = "#EF4444";
         return;
     }
     stopScanner();
     navigateTo('wallet');
-    claim(manualToken);
+    claim(hash);
 }
 
 async function claim(t) {
     const msg = document.getElementById('walletMsg');
-    if (msg) { msg.innerText = "DECRYPTING TOKEN..."; msg.style.color = "white"; }
+    msg.innerText = "DECRYPTING TOKEN..."; 
+    msg.style.color = "white";
     
-    const { data, error } = await db.rpc('claim_reward_token', { p_token_id: t });
+    const usePotion = document.getElementById('usePotionToggle')?.checked || false;
+    
+    const { data, error } = await db.rpc('claim_reward_token', { p_token_id: t, p_use_boost: usePotion });
     
     if (error) {
-        if (msg) { msg.innerText = "ERROR: HASH VOID OR EXPIRED."; msg.style.color = '#EF4444'; }
+        msg.innerText = "ERROR: HASH VOID OR EXPIRED."; 
+        msg.style.color = '#EF4444'; 
     } else {
-        if (msg) { msg.innerText = `DATA SYNC: +${data.toFixed(1)} PTS ACQUIRED.`; msg.style.color = '#10B981'; }
+        msg.innerText = `DATA SYNC: +${data.toFixed(1)} PTS ACQUIRED.`; 
+        msg.style.color = '#10B981'; 
+        document.getElementById('usePotionToggle').checked = false; 
+        loadWallet(); 
     }
     window.history.replaceState({}, '', window.location.pathname);
     pendingToken = null;
@@ -239,7 +277,6 @@ async function handleLogout() {
     location.reload(); 
 }
 
-// --- BOOT SEQUENCE ---
 window.onload = async () => {
     const { data } = await db.auth.getUser();
     if (data.user) {
