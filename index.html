@@ -10,7 +10,6 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -32,14 +31,18 @@
 
     <div id="auth-view" class="view">
         <div class="card glass-panel">
-            <h2 id="authTitle" class="neon-text">RVL Login</h2>
+            <h2 id="authTitle" class="neon-text">RVL LOGIN</h2>
             <div id="authMsg" class="msg"></div>
             
             <input type="text" id="regUser" style="display:none" placeholder="GAMER TAG">
             <input type="email" id="email" placeholder="EMAIL ADDRESS">
             <input type="password" id="password" placeholder="PASSWORD">
             
-            <button onclick="handleAuth()" id="authBtn" class="btn btn-red">INITIALIZE</button>
+            <p id="forgotLink" style="text-align: right; margin-top: 5px;">
+                <span onclick="navigateTo('forgot')" class="link-muted">Forgot Password?</span>
+            </p>
+
+            <button onclick="handleAuth()" id="authBtn" class="btn btn-red" style="margin-top: 15px;">INITIALIZE</button>
             
             <p class="toggle-text">
                 <span id="toggleText">New to the arena?</span> 
@@ -49,12 +52,52 @@
         </div>
     </div>
 
+    <div id="otp-view" class="view">
+        <div class="card glass-panel">
+            <h2 class="neon-text">VERIFY EMAIL</h2>
+            <p style="color: var(--text-main); font-weight: bold; margin-bottom: 20px;">Enter the 6-digit code sent to your email.</p>
+            <div id="otpMsg" class="msg"></div>
+            
+            <input type="text" id="otpCode" placeholder="000000" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px;" maxlength="6">
+            
+            <button onclick="verifyOTP()" class="btn btn-red">VERIFY ACCOUNT</button>
+            <button onclick="navigateTo('auth')" class="btn btn-outline" style="margin-top: 15px;">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="forgot-view" class="view">
+        <div class="card glass-panel">
+            <h2 class="neon-text">RECOVERY</h2>
+            <p style="color: var(--text-main); font-weight: bold; margin-bottom: 20px;">Enter your email to receive a reset code.</p>
+            <div id="forgotMsg" class="msg"></div>
+            
+            <input type="email" id="forgotEmail" placeholder="EMAIL ADDRESS">
+            
+            <button onclick="sendResetCode()" class="btn btn-red">SEND RESET CODE</button>
+            
+            <div id="resetCodeSection" style="display: none; margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px;">
+                <input type="text" id="resetOtpCode" placeholder="6-DIGIT CODE" style="text-align: center; letter-spacing: 2px;">
+                <input type="password" id="newPassword" placeholder="NEW PASSWORD">
+                <button onclick="submitNewPassword()" class="btn btn-outline" style="margin-top: 10px; border-color: var(--success); color: var(--success);">UPDATE PASSWORD</button>
+            </div>
+
+            <button onclick="navigateTo('auth')" class="btn btn-outline" style="margin-top: 15px;">BACK TO LOGIN</button>
+        </div>
+    </div>
+
     <div id="scanner-view" class="view">
         <div class="card glass-panel">
-            <h2 class="neon-text">SCAN TERMINAL</h2>
+            <h2 class="neon-text">DATA EXTRACTION</h2>
             <div id="reader" class="scanner-frame"></div>
             <div id="scanMsg" class="msg">ALIGN QR WITHIN FRAME</div>
-            <button onclick="stopScanner(); navigateTo('wallet')" class="btn btn-outline">ABORT SCAN</button>
+            
+            <div class="manual-entry-section" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <p style="color: #94A3B8; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">OR ENTER HASH MANUALLY</p>
+                <input type="text" id="manualTokenInput" placeholder="8-CHARACTER HASH" style="text-align: center; text-transform: uppercase; letter-spacing: 2px; font-size: 1.2rem;">
+                <button onclick="claimManual()" class="btn btn-outline" style="margin-top: 10px; border-color: var(--success); color: var(--success);">EXTRACT DATA</button>
+            </div>
+
+            <button onclick="stopScanner(); navigateTo('wallet')" class="btn btn-outline" style="margin-top: 20px;">ABORT PROCESS</button>
         </div>
     </div>
 
@@ -75,7 +118,7 @@
             </div>
             
             <button onclick="startScanner()" class="btn btn-red btn-scan">
-                <i class="fas fa-crosshairs"></i> SCAN TERMINAL
+                <i class="fas fa-crosshairs"></i> SYNC TERMINAL
             </button>
             
             <button id="claimBtn" class="btn btn-locked" disabled>REWARD LOCKED</button>
