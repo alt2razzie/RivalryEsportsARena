@@ -25,7 +25,7 @@ function toggleAuth() {
     const toggleText = document.getElementById('toggleText');
     const regField = document.getElementById('regUser');
 
-    title.innerText = isLogin ? 'IOS Login' : 'IOS Register';
+    title.innerText = isLogin ? 'RVL Login' : 'RVL Register';
     btn.innerText = isLogin ? 'INITIALIZE' : 'CREATE ID';
     toggleText.innerText = isLogin ? "New to the arena?" : "Already registered?";
     
