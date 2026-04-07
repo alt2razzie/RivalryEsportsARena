@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RVL ADMIN - Prize Redemption</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css"> <style>
+        .admin-card { border-color: var(--success); }
+        .amount-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .btn-amt { background: #1e293b; border: 1px solid #334155; color: white; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-amt.selected { border-color: var(--success); background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    </style>
+</head>
+<body>
+    <div id="admin-view" class="view active">
+        <div class="card glass-panel admin-card">
+            <h2 class="neon-text" style="text-shadow: 0 0 15px var(--success); color: var(--success);">STAFF PORTAL</h2>
+            <div id="statusMsg" class="msg">READY FOR REDEMPTION</div>
+
+            <div id="step1">
+                <input type="email" id="playerEmail" placeholder="PLAYER EMAIL">
+                <div class="amount-grid">
+                    <button class="btn-amt" onclick="selectAmount(50, this)">50 PTS</button>
+                    <button class="btn-amt" onclick="selectAmount(60, this)">60 PTS</button>
+                    <button class="btn-amt" onclick="selectAmount(70, this)">70 PTS</button>
+                    <button class="btn-amt" onclick="selectAmount(100, this)">100 PTS</button>
+                </div>
+                <button onclick="initiateRedemption()" class="btn btn-red" style="background: var(--success);">SEND VERIFICATION</button>
+            </div>
+
+            <div id="step2" style="display:none;">
+                <p style="color: #94A3B8;">Ask player for the 6-digit code sent to their email.</p>
+                <input type="text" id="adminOtp" placeholder="000000" style="text-align: center; letter-spacing: 5px;" maxlength="6">
+                <button onclick="confirmRedemption()" class="btn btn-red" style="background: var(--success);">FINALIZE CLAIM</button>
+                <button onclick="location.reload()" class="btn btn-outline" style="margin-top:10px;">CANCEL</button>
+            </div>
+        </div>
+    </div>
+    <script src="admin-app.js"></script>
+</body>
+</html>
