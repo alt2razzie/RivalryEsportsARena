@@ -1,6 +1,6 @@
 const CONF = { 
     URL: 'https://fzsrmnexarqrlaawnhmw.supabase.co', 
-    KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6c3JtbmV4YXJxcmxhYXduaG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTc3NjAsImV4cCI6MjA5MTA3Mzc2MH0.VMN_srt8MBpQBq4F3SlTZJrnubrERF4RIGHG-Qe3dRQ' 
+    KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6c3JtbmV4YXJxcmxhYXduaG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTc3NjAsImV4cCI6MjA5MTA3Mzc2MH0.VMN_srt8MBpQBq4F3SlTZJrnubrERF4RIGHG-Qe3dRQ' // REMEMBER TO PUT YOUR KEY HERE BEFORE DEPLOYING
 };
 
 let user = null;
@@ -12,6 +12,7 @@ let pendingToken = new URLSearchParams(window.location.search).get('token');
 
 const db = supabase.createClient(CONF.URL, CONF.KEY);
 
+// --- NAVIGATION & UI CONTROLS ---
 function navigateTo(id) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(id + '-view').classList.add('active');
@@ -31,7 +32,7 @@ function toggleAuth() {
     document.getElementById('forgotLink').style.display = isLogin ? 'block' : 'none';
 }
 
-// --- 1. CORE AUTH & RECOVERY ---
+// --- 1. CORE AUTHENTICATION & RECOVERY ---
 async function handleAuth() {
     const primaryInput = document.getElementById('emailOrNick').value.trim();
     const pass = document.getElementById('password').value;
@@ -44,6 +45,7 @@ async function handleAuth() {
     
     if (isLogin) {
         let loginEmail = primaryInput;
+        // If no '@', assume Gamer Tag and fetch the associated email securely
         if (!primaryInput.includes('@')) {
             const { data, error } = await db.rpc('get_email_from_nickname', { p_nickname: primaryInput });
             if (data) loginEmail = data;
@@ -60,6 +62,7 @@ async function handleAuth() {
             if (pendingToken) claim(pendingToken);
         }
     } else {
+        // Registration Logic with optional Referral Code
         const email = document.getElementById('regEmail').value.trim();
         const refCode = document.getElementById('refCodeInput').value.trim().toUpperCase();
         
@@ -97,6 +100,7 @@ async function verifyOTP() {
     }
 }
 
+// Password Recovery Logic
 async function sendResetCode() {
     const email = document.getElementById('forgotEmail').value.trim();
     const msg = document.getElementById('forgotMsg');
@@ -135,18 +139,25 @@ async function submitNewPassword() {
 // --- 2. WALLET, STREAKS & INVENTORY ---
 async function loadWallet() {
     if (!user) return;
-    const { data } = await db.from('user_profiles').select('*').eq('user_id', user.id).single();
+    const { data, error } = await db.from('user_profiles').select('*').eq('user_id', user.id).single();
     
     if (data) {
         userProfile = data;
-        document.getElementById('valPoints').innerText = data.total_points.toFixed(1);
-        document.getElementById('valPhp').innerText = (data.total_points * 4).toFixed(2);
-        document.getElementById('myRefCode').innerText = data.referral_code || "GENERATING...";
-        document.getElementById('streakCount').innerText = `${data.streak_days} DAYS`;
-        document.getElementById('potionCount').innerText = `🧪 ${data.boost_inventory}x BOOST POTIONS`;
         
+        // FAILSAFES (|| 0) to prevent "undefined" bugs for brand new accounts
+        const pts = data.total_points || 0;
+        const streak = data.streak_days || 0;
+        const potions = data.boost_inventory || 0;
+        
+        document.getElementById('valPoints').innerText = pts.toFixed(1);
+        document.getElementById('valPhp').innerText = (pts * 4).toFixed(2);
+        document.getElementById('myRefCode').innerText = data.referral_code || "GENERATING...";
+        document.getElementById('streakCount').innerText = `${streak} DAYS`;
+        document.getElementById('potionCount').innerText = `🧪 ${potions}x BOOST POTIONS`;
+        
+        // Daily Streak Button Logic
         const streakBtn = document.getElementById('streakBtn');
-        if (data.today_play_seconds >= 14400) { 
+        if (data.today_play_seconds >= 14400) { // 4 Hours = 14400 Seconds
             const today = new Date().toLocaleDateString('en-CA', {timeZone: 'Asia/Manila'});
             if (data.streak_claim_date !== today) {
                 streakBtn.style.display = 'block';
@@ -174,7 +185,7 @@ async function claimStreak() {
     if (data) {
         document.getElementById('walletMsg').innerText = "+2 PTS STREAK BONUS ACQUIRED!";
         document.getElementById('walletMsg').style.color = "#10B981";
-        loadWallet();
+        loadWallet(); // Instantly refresh UI
     }
 }
 
@@ -184,7 +195,13 @@ async function loadLeaderboard() {
     const lb = document.getElementById('lbContainer');
     lb.innerHTML = "<p style='text-align:center;'>LOADING RANKINGS...</p>";
     
-    const { data } = await db.from('user_profiles').select('nickname, total_points').order('total_points', { ascending: false }).limit(10);
+    const { data, error } = await db.from('user_profiles').select('nickname, total_points').order('total_points', { ascending: false }).limit(10);
+    
+    // Failsafe for empty database
+    if (error || !data || data.length === 0) {
+        lb.innerHTML = "<p style='text-align:center; color:#94A3B8;'>NO RANKINGS AVAILABLE YET</p>";
+        return;
+    }
     
     if (data) {
         lb.innerHTML = data.map((u, i) => {
@@ -193,10 +210,13 @@ async function loadLeaderboard() {
             else if(i === 1) rankClass += "silver";
             else if(i === 2) rankClass += "bronze";
 
+            const nick = u.nickname || "GAMER";
+            const pts = u.total_points || 0;
+
             return `
             <div class="${rankClass}">
-                <span>#${i+1} ${u.nickname}</span>
-                <span>${u.total_points.toFixed(1)} PTS</span>
+                <span>#${i+1} ${nick}</span>
+                <span>${pts.toFixed(1)} PTS</span>
             </div>
         `}).join('');
     }
@@ -208,7 +228,7 @@ async function startScanner() {
     document.getElementById('scanMsg').innerText = "ALIGN QR WITHIN FRAME";
     document.getElementById('scanMsg').style.color = "white";
     
-    // SECURITY GATE: Only shows the Potion box if the database says they have > 0 potions
+    // SECURITY GATE: Only shows the Potion box if they have > 0 potions
     const potionBox = document.getElementById('potionSection');
     const potionCheck = document.getElementById('usePotionToggle');
     potionCheck.checked = false; // Always uncheck by default
@@ -255,8 +275,10 @@ async function claim(t) {
     msg.innerText = "DECRYPTING TOKEN..."; 
     msg.style.color = "white";
     
+    // Read the Potion Checkbox
     const usePotion = document.getElementById('usePotionToggle')?.checked || false;
     
+    // Send token and potion status to Supabase SQL
     const { data, error } = await db.rpc('claim_reward_token', { p_token_id: t, p_use_boost: usePotion });
     
     if (error) {
@@ -266,7 +288,7 @@ async function claim(t) {
         msg.innerText = `DATA SYNC: +${data.toFixed(1)} PTS ACQUIRED.`; 
         msg.style.color = '#10B981'; 
         document.getElementById('usePotionToggle').checked = false; 
-        loadWallet(); 
+        loadWallet(); // Refresh Inventory & Points
     }
     window.history.replaceState({}, '', window.location.pathname);
     pendingToken = null;
@@ -277,6 +299,7 @@ async function handleLogout() {
     location.reload(); 
 }
 
+// --- 5. BOOT SEQUENCE ---
 window.onload = async () => {
     const { data } = await db.auth.getUser();
     if (data.user) {
