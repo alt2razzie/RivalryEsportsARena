@@ -308,3 +308,21 @@ window.onload = async () => {
         if (pendingToken) claim(pendingToken);
     }
 };
+
+// Example of how the phone claims the points
+async function claimPoints() {
+    const userEmail = document.getElementById('email').value;
+    const token = document.getElementById('tokenCode').value.toUpperCase();
+
+    const { data, error } = await supabase.rpc('claim_session_token', {
+        p_user_email: userEmail,
+        p_token: token
+    });
+
+    if (error) {
+        alert("Error: Token invalid, already claimed, or under 60 mins.");
+    } else {
+        alert(`Success! ${data} Points Added!`);
+        // The PC will notice this happened within 30 seconds and reset itself!
+    }
+}
