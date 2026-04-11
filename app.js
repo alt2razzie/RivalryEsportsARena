@@ -1,141 +1,276 @@
-// --- CONFIGURATION ---
+// --- 1. CONFIGURATION ---
 const SUPABASE_URL = 'https://fzsrmnexarqrlaawnhmw.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6c3JtbmV4YXJxcmxhYXduaG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTc3NjAsImV4cCI6MjA5MTA3Mzc2MH0.VMN_srt8MBpQBq4F3SlTZJrnubrERF4RIGHG-Qe3dRQ'; // Replace with your actual key
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6c3JtbmV4YXJxcmxhYXduaG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTc3NjAsImV4cCI6MjA5MTA3Mzc2MH0.VMN_srt8MBpQBq4F3SlTZJrnubrERF4RIGHG-Qe3dRQ'; // Replace with your actual Anon Key
 
-// Initialize Supabase
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// BUG FIX: Name this 'db' instead of 'supabase' to avoid the "already declared" crash
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// --- GLOBAL STATE ---
+// --- 2. GLOBAL STATE ---
 let currentUserEmail = ""; 
-let currentToken = ""; // Holds the 6-digit hash
+let currentToken = ""; 
+let html5QrcodeScanner = null;
+let isRegisterMode = false;
 
+// --- 3. CORE NAVIGATION (SPA ROUTER) ---
+function navigateTo(viewName) {
+    // Hide all views
+    document.querySelectorAll('.view').forEach(view => {
+        view.classList.remove('active');
+        view.style.display = 'none';
+    });
+
+    // Show the target view
+    const targetView = document.getElementById(viewName + '-view');
+    if (targetView) {
+        targetView.classList.add('active');
+        targetView.style.display = 'block';
+    } else {
+        console.error("View not found:", viewName);
+    }
+}
+
+// --- 4. INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Authenticate: Get the logged-in user's session
-    const { data: { session } } = await supabase.auth.getSession();
+    // Check if user is already logged in
+    const { data: { session } } = await db.auth.getSession();
     
     if (session && session.user) {
         currentUserEmail = session.user.email;
-        refreshWalletDisplay(currentUserEmail); 
+        refreshWalletDisplay(); 
+        navigateTo('wallet');
     } else {
-        console.warn("User not logged in. Redirect to login screen.");
-        // window.location.href = "login.html"; 
+        navigateTo('home');
     }
 
-    // 2. Auto-Detect QR Scans: Grab the token from the URL
+    // Check if they scanned a QR code via URL parameter
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('token')) {
         currentToken = urlParams.get('token').toUpperCase();
-        console.log("Token detected from QR Scan:", currentToken);
         
-        // Optional: If you have a text input for manual entry, auto-fill it
-        const tokenInput = document.getElementById('token-input');
-        if (tokenInput) tokenInput.value = currentToken;
-    }
+        // Auto-fill manual input just in case
+        const manualInput = document.getElementById('manualTokenInput');
+        if (manualInput) manualInput.value = currentToken;
 
-    // 3. Attach Action to your "SYNC TERMINAL" button
-    const syncBtn = document.getElementById('btn-sync-terminal');
-    if (syncBtn) {
-        syncBtn.addEventListener('click', () => {
-            // Grab token from URL variable, OR from a manual input field if they typed it
-            const manualInput = document.getElementById('token-input')?.value.toUpperCase();
-            const finalHash = manualInput || currentToken;
-            
-            if (finalHash) {
-                syncTerminal(finalHash);
-            } else {
-                showError("ERROR: NO HASH DETECTED. SCAN QR OR ENTER CODE.");
-            }
-        });
+        // If logged in, jump straight to scanner view to confirm extraction
+        if (session && session.user) {
+            navigateTo('scanner-view');
+        }
     }
 });
 
-// --- CORE FUNCTION: SECURE DATABASE SYNC ---
-async function syncTerminal(hashToken) {
-    if (!currentUserEmail) {
-        showError("ERROR: WALLET NOT AUTHENTICATED.");
+// --- 5. AUTHENTICATION LOGIC ---
+function toggleAuth() {
+    isRegisterMode = !isRegisterMode;
+    document.getElementById('authTitle').innerText = isRegisterMode ? "RVL REGISTER" : "RVL LOGIN";
+    document.getElementById('authBtn').innerText = isRegisterMode ? "CREATE PROFILE" : "INITIALIZE";
+    document.getElementById('toggleText').innerText = isRegisterMode ? "Already in the system?" : "New to the arena?";
+    document.querySelector('.link-red').innerText = isRegisterMode ? "Login Here" : "Register Here";
+    
+    document.getElementById('regFields').style.display = isRegisterMode ? "block" : "none";
+    document.getElementById('forgotLink').style.display = isRegisterMode ? "none" : "block";
+}
+
+async function handleAuth() {
+    const email = document.getElementById('emailOrNick').value.trim();
+    const msgEl = document.getElementById('authMsg');
+    
+    if (!email) {
+        msgEl.innerText = "ERROR: EMAIL REQUIRED.";
+        msgEl.style.color = "#EF4444";
         return;
     }
 
-    showStatus("ESTABLISHING SECURE LINK...");
+    msgEl.innerText = "CONNECTING...";
+    msgEl.style.color = "#9CA3AF";
+
+    // Since we are using Passwordless OTP for maximum security
+    const { data, error } = await db.auth.signInWithOtp({
+        email: email,
+        options: { should_create_user: isRegisterMode }
+    });
+
+    if (error) {
+        msgEl.innerText = "ERROR: " + error.message.toUpperCase();
+        msgEl.style.color = "#EF4444";
+    } else {
+        currentUserEmail = email; // Store temporarily for OTP check
+        navigateTo('otp');
+        document.getElementById('otpMsg').innerText = "CODE SENT TO " + email;
+        document.getElementById('otpMsg').style.color = "#10B981";
+    }
+}
+
+async function verifyOTP() {
+    const otp = document.getElementById('otpCode').value.trim();
+    const msgEl = document.getElementById('otpMsg');
+
+    if (otp.length !== 6) {
+        msgEl.innerText = "ENTER 6-DIGIT HASH.";
+        msgEl.style.color = "#EF4444";
+        return;
+    }
+
+    msgEl.innerText = "VERIFYING HASH...";
+    msgEl.style.color = "#9CA3AF";
+
+    const { data: { session }, error } = await db.auth.verifyOtp({
+        email: currentUserEmail,
+        token: otp,
+        type: 'email'
+    });
+
+    if (error || !session) {
+        msgEl.innerText = "ACCESS DENIED: INVALID HASH.";
+        msgEl.style.color = "#EF4444";
+    } else {
+        currentUserEmail = session.user.email;
+        refreshWalletDisplay();
+        navigateTo('wallet');
+        // Clear inputs
+        document.getElementById('emailOrNick').value = '';
+        document.getElementById('otpCode').value = '';
+    }
+}
+
+async function handleLogout() {
+    await db.auth.signOut();
+    currentUserEmail = "";
+    navigateTo('home');
+}
+
+// --- 6. WALLET & UI DISPLAY ---
+async function refreshWalletDisplay() {
+    if (!currentUserEmail) return;
+
+    const { data, error } = await db.from('user_profiles').select('*').eq('email', currentUserEmail).single();
+    
+    if (data) {
+        // Update Points
+        const ptsEl = document.getElementById('valPoints');
+        if (ptsEl) ptsEl.innerText = data.total_points.toFixed(1);
+        
+        // Update PHP Value (Assuming 1 Pt = 4 PHP)
+        const phpEl = document.getElementById('valPhp');
+        if (phpEl) phpEl.innerText = (data.total_points * 4).toFixed(2);
+        
+        // Update Nickname/RefCode (If your table has these)
+        const refEl = document.getElementById('myRefCode');
+        if (refEl && data.nickname) refEl.innerText = data.nickname.toUpperCase();
+    }
+}
+
+// --- 7. QR SCANNER LOGIC ---
+function startScanner() {
+    navigateTo('scanner');
+    
+    // Clear old messages
+    document.getElementById('scanMsg').innerText = "ALIGN QR WITHIN FRAME";
+    document.getElementById('scanMsg').style.color = "#9CA3AF";
+
+    if (!html5QrcodeScanner) {
+        html5QrcodeScanner = new Html5Qrcode("reader");
+    }
+
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess)
+    .catch(err => {
+        document.getElementById('scanMsg').innerText = "CAMERA ACCESS DENIED OR UNAVAILABLE";
+        document.getElementById('scanMsg').style.color = "#EF4444";
+    });
+}
+
+function stopScanner() {
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.stop().catch(err => console.error("Failed to stop scanner", err));
+    }
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    stopScanner(); // Stop camera once successfully read
+    
+    // Check if the QR contains a full URL or just a token
+    let tokenToProcess = decodedText;
+    if (decodedText.includes('token=')) {
+        const params = new URLSearchParams(decodedText.split('?')[1]);
+        tokenToProcess = params.get('token');
+    }
+
+    if (tokenToProcess) {
+        syncTerminal(tokenToProcess.toUpperCase());
+    } else {
+        document.getElementById('scanMsg').innerText = "INVALID RVL QR FORMAT.";
+        document.getElementById('scanMsg').style.color = "#EF4444";
+    }
+}
+
+// Manual Entry Fallback
+function claimManual() {
+    const manualToken = document.getElementById('manualTokenInput').value.trim().toUpperCase();
+    if (manualToken) {
+        syncTerminal(manualToken);
+    } else {
+        document.getElementById('scanMsg').innerText = "ENTER HASH FIRST.";
+        document.getElementById('scanMsg').style.color = "#EF4444";
+    }
+}
+
+// --- 8. SECURE DATABASE SYNC ---
+async function syncTerminal(hashToken) {
+    if (!currentUserEmail) {
+        navigateTo('auth');
+        return;
+    }
+
+    const msgEl = document.getElementById('scanMsg');
+    msgEl.innerText = "ESTABLISHING SECURE LINK...";
+    msgEl.style.color = "#9CA3AF";
 
     try {
-        // Fire the secure SQL function we built
-        const { data: earnedPoints, error } = await supabase.rpc('claim_session_token', {
+        const { data: earnedPoints, error } = await db.rpc('claim_session_token', {
             p_user_email: currentUserEmail,
             p_token: hashToken
         });
 
-        // Handle Database Rejections
         if (error) {
-            console.error("Supabase Rejected:", error.message);
-            
-            // This catches the exact SQL exception we wrote (Points < 1 or already claimed)
-            if (error.message.includes("Invalid, expired, or insufficient")) {
-                showError("ERROR: HASH VOID OR EXPIRED.");
-            } else {
-                showError("ERROR: NETWORK CONNECTION LOST.");
-            }
+            console.error("RPC Error:", error.message);
+            msgEl.innerText = error.message.includes("sufficient") ? "ERROR: HASH VOID OR EXPIRED." : "ERROR: NETWORK REJECTION.";
+            msgEl.style.color = "#EF4444";
             return;
         }
 
-        // --- SUCCESS STATE ---
-        showSuccess(`SYNC COMPLETE: +${earnedPoints} PTS ADDED.`);
+        // Success Workflow
+        msgEl.innerText = `SYNC COMPLETE: +${earnedPoints} PTS ADDED.`;
+        msgEl.style.color = "#10B981";
         
-        // Erase the token so they can't spam the button
-        currentToken = "";
-        if (document.getElementById('token-input')) {
-            document.getElementById('token-input').value = "";
-        }
-
-        // Instantly update the giant number on their screen
-        refreshWalletDisplay(currentUserEmail);
+        // Clear manual input
+        document.getElementById('manualTokenInput').value = "";
+        
+        // Refresh wallet and jump back to wallet view after 2 seconds
+        refreshWalletDisplay();
+        setTimeout(() => {
+            navigateTo('wallet');
+        }, 2000);
 
     } catch (err) {
-        showError("CRITICAL SYSTEM FAILURE.");
         console.error(err);
+        msgEl.innerText = "CRITICAL SYSTEM FAILURE.";
+        msgEl.style.color = "#EF4444";
     }
 }
 
-// --- UI HELPERS ---
-function refreshWalletDisplay(email) {
-    // Pull fresh data from the database to ensure the screen matches the server
-    supabase.from('user_profiles').select('total_points').eq('email', email).single()
-        .then(({ data, error }) => {
-            if (data && document.getElementById('display-points')) {
-                // Assuming you have a <span id="display-points"> for the big 275.1 number
-                document.getElementById('display-points').innerText = data.total_points.toFixed(1);
-                
-                // Calculate Peso Value (Assuming 1 Pt = 4 Pesos based on your screenshot)
-                const pesoValue = (data.total_points * 4).toFixed(2);
-                const estValueEl = document.getElementById('display-est-value');
-                if (estValueEl) {
-                    estValueEl.innerText = `₱${pesoValue}`;
-                }
-            }
-        });
+// --- 9. STUBS FOR EXTRA FEATURES ---
+// These are placeholders so your buttons don't throw errors when clicked.
+function loadLeaderboard() {
+    navigateTo('leaderboard');
+    document.getElementById('lbContainer').innerHTML = "<p style='color: var(--text-muted); text-align: center;'>RANKINGS SYNCING...</p>";
 }
 
-// Functions to change the text above the big points number
-function showError(msg) {
-    const statusEl = document.getElementById('wallet-status-msg');
-    if (statusEl) {
-        statusEl.innerText = msg;
-        statusEl.style.color = "#EF4444"; // RVL Red
-    }
+function sendResetCode() {
+    document.getElementById('forgotMsg').innerText = "SYSTEM NOT CONFIGURED YET.";
+    document.getElementById('forgotMsg').style.color = "#EF4444";
 }
 
-function showStatus(msg) {
-    const statusEl = document.getElementById('wallet-status-msg');
-    if (statusEl) {
-        statusEl.innerText = msg;
-        statusEl.style.color = "#9CA3AF"; // Neutral Gray
-    }
-}
-
-function showSuccess(msg) {
-    const statusEl = document.getElementById('wallet-status-msg');
-    if (statusEl) {
-        statusEl.innerText = msg;
-        statusEl.style.color = "#10B981"; // Secure Green
-    }
+function claimStreak() {
+    console.log("Streak Claim Clicked");
 }
