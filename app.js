@@ -326,3 +326,16 @@ async function claimPoints() {
         // The PC will notice this happened within 30 seconds and reset itself!
     }
 }
+
+// 1. Grab the URL parameters
+const urlParams = new URLSearchParams(window.location.search);
+
+// 2. Extract the token
+const scannedToken = urlParams.get('token');
+
+// 3. Put it in your input field (if you have one) so the user sees it, 
+// OR save it to a variable to pass to your claimPoints() function.
+if (scannedToken) {
+    console.log("Token from QR:", scannedToken);
+    // document.getElementById('tokenCode').value = scannedToken; 
+}
