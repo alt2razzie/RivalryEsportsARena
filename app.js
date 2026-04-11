@@ -55,6 +55,7 @@ function toggleAuth() {
 async function handleAuth() {
     const email = document.getElementById('emailOrNick').value.trim();
     const msgEl = document.getElementById('authMsg');
+    const authBtn = document.getElementById('authBtn'); // Grab the button
     
     if (!email) {
         msgEl.innerText = "ERROR: EMAIL REQUIRED.";
@@ -62,7 +63,10 @@ async function handleAuth() {
         return;
     }
 
-    msgEl.innerText = "CONNECTING...";
+    // 1. INSTANTLY DISABLE THE BUTTON SO THEY CAN'T DOUBLE-CLICK
+    authBtn.disabled = true;
+    authBtn.innerText = "TRANSMITTING...";
+    msgEl.innerText = "CONNECTING TO SERVER...";
     msgEl.style.color = "#9CA3AF";
 
     const { data, error } = await db.auth.signInWithOtp({
@@ -73,11 +77,18 @@ async function handleAuth() {
     if (error) {
         msgEl.innerText = "ERROR: " + error.message.toUpperCase();
         msgEl.style.color = "#EF4444";
+        // 2. TURN THE BUTTON BACK ON IF IT FAILS
+        authBtn.disabled = false;
+        authBtn.innerText = isRegisterMode ? "CREATE PROFILE" : "INITIALIZE";
     } else {
         currentUserEmail = email; 
         navigateTo('otp');
         document.getElementById('otpMsg').innerText = "CODE SENT TO " + email;
         document.getElementById('otpMsg').style.color = "#10B981";
+        
+        // 3. RESET THE BUTTON FOR NEXT TIME
+        authBtn.disabled = false;
+        authBtn.innerText = isRegisterMode ? "CREATE PROFILE" : "INITIALIZE";
     }
 }
 
