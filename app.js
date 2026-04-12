@@ -1,23 +1,28 @@
-// --- 1. CONFIGURATION ---
+
 const SUPABASE_URL = 'https://fzsrmnexarqrlaawnhmw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6c3JtbmV4YXJxcmxhYXduaG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTc3NjAsImV4cCI6MjA5MTA3Mzc2MH0.VMN_srt8MBpQBq4F3SlTZJrnubrERF4RIGHG-Qe3dRQ'; // Replace with your actual Anon Key
 
-// Fixed variable name to avoid global CDN collision
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// --- 2. GLOBAL STATE ---
+// ==========================================
+// 2. GLOBAL STATE
+// ==========================================
 let currentUserEmail = ""; 
-let currentToken = ""; 
+let currentUserId = "";
 let html5QrcodeScanner = null;
-let isRegisterMode = false;
+let isRegisterMode = false; // Tracks if the user is on the Login or Register screen
 
-// --- 3. CORE NAVIGATION (SPA ROUTER) ---
+// ==========================================
+// 3. CORE NAVIGATION (SPA ROUTER)
+// ==========================================
 function navigateTo(viewName) {
+    // Hide all views
     document.querySelectorAll('.view').forEach(view => {
         view.classList.remove('active');
         view.style.display = 'none';
     });
 
+    // Show the target view
     const targetView = document.getElementById(viewName + '-view');
     if (targetView) {
         targetView.classList.add('active');
@@ -27,109 +32,135 @@ function navigateTo(viewName) {
     }
 }
 
-// --- 4. INITIALIZATION ---
+// ==========================================
+// 4. INITIALIZATION (Check if already logged in)
+// ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await db.auth.getSession();
     
     if (session && session.user) {
         currentUserEmail = session.user.email;
+        currentUserId = session.user.id;
         refreshWalletDisplay(); 
         navigateTo('wallet');
     } else {
-        navigateTo('home');
+        navigateTo('auth'); // Send to login screen
     }
 });
 
-// --- 5. AUTHENTICATION LOGIC ---
+// ==========================================
+// 5. AUTHENTICATION LOGIC (Email & Password)
+// ==========================================
 function toggleAuth() {
     isRegisterMode = !isRegisterMode;
+    
+    // Update UI Titles and Buttons
     document.getElementById('authTitle').innerText = isRegisterMode ? "RVL REGISTER" : "RVL LOGIN";
     document.getElementById('authBtn').innerText = isRegisterMode ? "CREATE PROFILE" : "INITIALIZE";
-    document.getElementById('toggleText').innerText = isRegisterMode ? "Already in the system?" : "New to the arena?";
     document.querySelector('.link-red').innerText = isRegisterMode ? "Login Here" : "Register Here";
     
-    document.getElementById('regFields').style.display = isRegisterMode ? "block" : "none";
-    document.getElementById('forgotLink').style.display = isRegisterMode ? "none" : "block";
+    // Show/Hide specific inputs based on mode
+    // (Assuming you have an ID 'gamerTagInput' for the Nickname box)
+    const gamerTagBox = document.getElementById('gamerTagInput');
+    if (gamerTagBox) gamerTagBox.style.display = isRegisterMode ? "block" : "none";
+    
+    document.getElementById('authMsg').innerText = ""; // Clear errors
 }
 
 async function handleAuth() {
-    const email = document.getElementById('emailOrNick').value.trim();
+    // Grab the inputs from the UI
+    const gamerTag = document.getElementById('gamerTagInput') ? document.getElementById('gamerTagInput').value.trim() : "";
+    const password = document.getElementById('passwordInput').value;
+    const email = document.getElementById('emailInput').value.trim();
     const msgEl = document.getElementById('authMsg');
-    const authBtn = document.getElementById('authBtn'); // Grab the button
-    
-    if (!email) {
-        msgEl.innerText = "ERROR: EMAIL REQUIRED.";
+    const authBtn = document.getElementById('authBtn');
+
+    if (!email || !password || (isRegisterMode && !gamerTag)) {
+        msgEl.innerText = "ERROR: ALL FIELDS REQUIRED.";
         msgEl.style.color = "#EF4444";
         return;
     }
 
-    // 1. INSTANTLY DISABLE THE BUTTON SO THEY CAN'T DOUBLE-CLICK
+    // DEBOUNCE FIX: Disable button so they can't double-click
     authBtn.disabled = true;
     authBtn.innerText = "TRANSMITTING...";
-    msgEl.innerText = "CONNECTING TO SERVER...";
+    msgEl.innerText = "ESTABLISHING CONNECTION...";
     msgEl.style.color = "#9CA3AF";
 
-    const { data, error } = await db.auth.signInWithOtp({
-        email: email,
-        options: { should_create_user: isRegisterMode }
-    });
+    if (isRegisterMode) {
+        // --- REGISTRATION FLOW ---
+        const { data, error } = await db.auth.signUp({
+            email: email,
+            password: password
+        });
 
-    if (error) {
-        msgEl.innerText = "ERROR: " + error.message.toUpperCase();
-        msgEl.style.color = "#EF4444";
-        // 2. TURN THE BUTTON BACK ON IF IT FAILS
-        authBtn.disabled = false;
-        authBtn.innerText = isRegisterMode ? "CREATE PROFILE" : "INITIALIZE";
+        if (error) {
+            msgEl.innerText = "ERROR: " + error.message.toUpperCase();
+            msgEl.style.color = "#EF4444";
+            resetAuthButton();
+            return;
+        }
+
+        // If Auth succeeds, create their Profile in the database
+        if (data.user) {
+            const { error: profileError } = await db.from('user_profiles').insert([
+                { 
+                    user_id: data.user.id, 
+                    email: email, 
+                    nickname: gamerTag,
+                    total_points: 0 
+                }
+            ]);
+
+            if (profileError) {
+                msgEl.innerText = "ERROR SAVING PROFILE DATA.";
+                msgEl.style.color = "#EF4444";
+                resetAuthButton();
+            } else {
+                currentUserEmail = email;
+                currentUserId = data.user.id;
+                refreshWalletDisplay();
+                navigateTo('wallet');
+                resetAuthButton();
+            }
+        }
     } else {
-        currentUserEmail = email; 
-        navigateTo('otp');
-        document.getElementById('otpMsg').innerText = "CODE SENT TO " + email;
-        document.getElementById('otpMsg').style.color = "#10B981";
-        
-        // 3. RESET THE BUTTON FOR NEXT TIME
-        authBtn.disabled = false;
-        authBtn.innerText = isRegisterMode ? "CREATE PROFILE" : "INITIALIZE";
+        // --- LOGIN FLOW ---
+        const { data, error } = await db.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+
+        if (error) {
+            msgEl.innerText = "ERROR: " + error.message.toUpperCase();
+            msgEl.style.color = "#EF4444";
+            resetAuthButton();
+        } else {
+            currentUserEmail = email;
+            currentUserId = data.user.id;
+            refreshWalletDisplay();
+            navigateTo('wallet');
+            resetAuthButton();
+        }
     }
 }
 
-async function verifyOTP() {
-    const otp = document.getElementById('otpCode').value.trim();
-    const msgEl = document.getElementById('otpMsg');
-
-    if (otp.length !== 6) {
-        msgEl.innerText = "ENTER 6-DIGIT HASH.";
-        msgEl.style.color = "#EF4444";
-        return;
-    }
-
-    msgEl.innerText = "VERIFYING HASH...";
-    msgEl.style.color = "#9CA3AF";
-
-    const { data: { session }, error } = await db.auth.verifyOtp({
-        email: currentUserEmail,
-        token: otp,
-        type: 'email'
-    });
-
-    if (error || !session) {
-        msgEl.innerText = "ACCESS DENIED: INVALID HASH.";
-        msgEl.style.color = "#EF4444";
-    } else {
-        currentUserEmail = session.user.email;
-        refreshWalletDisplay();
-        navigateTo('wallet');
-        document.getElementById('emailOrNick').value = '';
-        document.getElementById('otpCode').value = '';
-    }
+function resetAuthButton() {
+    const authBtn = document.getElementById('authBtn');
+    authBtn.disabled = false;
+    authBtn.innerText = isRegisterMode ? "CREATE PROFILE" : "INITIALIZE";
 }
 
 async function handleLogout() {
     await db.auth.signOut();
     currentUserEmail = "";
-    navigateTo('home');
+    currentUserId = "";
+    navigateTo('auth');
 }
 
-// --- 6. WALLET & UI DISPLAY ---
+// ==========================================
+// 6. WALLET & UI DISPLAY
+// ==========================================
 async function refreshWalletDisplay() {
     if (!currentUserEmail) return;
 
@@ -139,6 +170,7 @@ async function refreshWalletDisplay() {
         const ptsEl = document.getElementById('valPoints');
         if (ptsEl) ptsEl.innerText = data.total_points.toFixed(1);
         
+        // Example: 1 Point = 4 PHP (Adjust to your actual conversion rate)
         const phpEl = document.getElementById('valPhp');
         if (phpEl) phpEl.innerText = (data.total_points * 4).toFixed(2);
         
@@ -147,23 +179,30 @@ async function refreshWalletDisplay() {
     }
 }
 
-// --- 7. QR SCANNER LOGIC ---
+// ==========================================
+// 7. QR SCANNER LOGIC
+// ==========================================
 function startScanner() {
     navigateTo('scanner');
     
-    document.getElementById('scanMsg').innerText = "ALIGN QR WITHIN FRAME";
-    document.getElementById('scanMsg').style.color = "#9CA3AF";
+    const msgEl = document.getElementById('scanMsg');
+    msgEl.innerText = "ALIGN QR WITHIN FRAME";
+    msgEl.style.color = "#9CA3AF";
 
     if (!html5QrcodeScanner) {
         html5QrcodeScanner = new Html5Qrcode("reader");
     }
 
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    const config = { 
+        fps: 20, 
+        qrbox: { width: 280, height: 280 },
+        aspectRatio: 1.0 
+    };
 
     html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess)
     .catch(err => {
-        document.getElementById('scanMsg').innerText = "CAMERA ACCESS DENIED OR UNAVAILABLE";
-        document.getElementById('scanMsg').style.color = "#EF4444";
+        msgEl.innerText = "CAMERA ACCESS DENIED OR UNAVAILABLE";
+        msgEl.style.color = "#EF4444";
     });
 }
 
@@ -175,21 +214,23 @@ function stopScanner() {
 
 function onScanSuccess(decodedText, decodedResult) {
     stopScanner(); 
-    // Reads the raw 6-digit hash directly from the screen
+    // Sends the 6-digit Hash to the Database
     syncTerminal(decodedText.toUpperCase());
 }
 
 function claimManual() {
     const manualToken = document.getElementById('manualTokenInput').value.trim().toUpperCase();
-    if (manualToken) {
+    if (manualToken.length === 6) {
         syncTerminal(manualToken);
     } else {
-        document.getElementById('scanMsg').innerText = "ENTER HASH FIRST.";
+        document.getElementById('scanMsg').innerText = "ERROR: ENTER 6-DIGIT HASH.";
         document.getElementById('scanMsg').style.color = "#EF4444";
     }
 }
 
-// --- 8. SECURE DATABASE SYNC ---
+// ==========================================
+// 8. SECURE DATABASE SYNC (RPC CALL)
+// ==========================================
 async function syncTerminal(hashToken) {
     if (!currentUserEmail) {
         navigateTo('auth');
@@ -201,7 +242,7 @@ async function syncTerminal(hashToken) {
     msgEl.style.color = "#9CA3AF";
 
     try {
-        // Calls the RPC we built in the Supabase SQL Editor
+        // Calls the Anti-Farming RPC we built in Supabase
         const { data: earnedPoints, error } = await db.rpc('claim_session_token', {
             p_user_email: currentUserEmail,
             p_token: hashToken
@@ -214,15 +255,18 @@ async function syncTerminal(hashToken) {
             return;
         }
 
-        msgEl.innerText = `SYNC COMPLETE: +${earnedPoints} PTS ADDED.`;
+        msgEl.innerText = `SYNC COMPLETE: +${earnedPoints} PTS SECURED.`;
         msgEl.style.color = "#10B981";
         
-        document.getElementById('manualTokenInput').value = "";
+        const manualInput = document.getElementById('manualTokenInput');
+        if (manualInput) manualInput.value = "";
         
         refreshWalletDisplay();
+        
+        // Auto-return to wallet after success
         setTimeout(() => {
             navigateTo('wallet');
-        }, 2000);
+        }, 2500);
 
     } catch (err) {
         console.error(err);
@@ -231,17 +275,11 @@ async function syncTerminal(hashToken) {
     }
 }
 
-// --- 9. UI STUBS ---
+// ==========================================
+// 9. UI STUBS & EXTRA FEATURES
+// ==========================================
 function loadLeaderboard() {
     navigateTo('leaderboard');
+    // You can fetch and build the leaderboard HTML here later!
     document.getElementById('lbContainer').innerHTML = "<p style='color: var(--text-muted); text-align: center;'>RANKINGS SYNCING...</p>";
-}
-
-function sendResetCode() {
-    document.getElementById('forgotMsg').innerText = "SYSTEM NOT CONFIGURED YET.";
-    document.getElementById('forgotMsg').style.color = "#EF4444";
-}
-
-function claimStreak() {
-    console.log("Streak Claim Clicked");
 }
