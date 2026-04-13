@@ -2,20 +2,19 @@
 <html lang="en">
 <head>
     <link rel="manifest" href="manifest.json">
-
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RVL Brill AI">
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script>
-      // Register Service Worker
+      // Register Service Worker for PWA (Mobile App Feel)
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('service-worker.js');
       }
     </script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RVL Brill AI - Rivalry Esports Arena</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
@@ -55,14 +54,14 @@
             <input type="text" id="referralInput" placeholder="REFERRAL CODE (OPTIONAL)" style="display: none;">
             
             <p id="forgotLink" style="text-align: right; margin-top: 5px;">
-                <span onclick="navigateTo('forgot')" class="link-muted">Forgot Password?</span>
+                <span onclick="navigateTo('forgot')" class="link-muted" style="cursor: pointer;">Forgot Password?</span>
             </p>
 
             <button onclick="handleAuth()" id="authBtn" class="btn btn-red" style="margin-top: 15px;">INITIALIZE</button>
             
             <p class="toggle-text">
                 <span id="toggleText">New to the arena?</span> 
-                <span onclick="toggleAuth(); document.getElementById('referralInput').style.display = isRegisterMode ? 'block' : 'none';" class="link-red">Register Here</span>
+                <span onclick="toggleAuth(); document.getElementById('referralInput').style.display = isRegisterMode ? 'block' : 'none';" class="link-red" style="cursor: pointer;">Register Here</span>
             </p>
             <button onclick="navigateTo('home')" class="btn btn-outline">BACK TO SYSTEM</button>
         </div>
@@ -75,6 +74,7 @@
             <div id="otpMsg" class="msg"></div>
             <input type="text" id="otpCode" placeholder="000000" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px;" maxlength="6">
             <button onclick="verifyOTP()" class="btn btn-red">VERIFY ACCOUNT</button>
+            <button onclick="navigateTo('auth')" class="btn btn-outline" style="margin-top: 15px;">CANCEL</button>
         </div>
     </div>
 
@@ -119,7 +119,7 @@
             <div id="reader" class="scanner-frame"></div>
             <div id="scanMsg" class="msg">ALIGN QR WITHIN FRAME</div>
             
-            <div class="manual-entry-section">
+            <div class="manual-entry-section" style="margin-top: 20px;">
                 <p style="color: #94A3B8; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">OR ENTER HASH MANUALLY</p>
                 <input type="text" id="manualTokenInput" placeholder="6-DIGIT HASH" style="text-align: center; text-transform: uppercase; letter-spacing: 2px;" maxlength="6">
                 <button onclick="claimManual()" class="btn btn-outline" style="margin-top: 10px; border-color: var(--success); color: var(--success);">EXTRACT DATA</button>
@@ -155,15 +155,15 @@
                 </div>
             </div>
 
-            <button id="streakBtn" onclick="claimStreak()" class="btn btn-streak" style="display: none;">
+            <button id="streakBtn" onclick="claimStreak()" class="btn btn-streak" style="display: none; margin-top: 15px;">
                 🎁 CLAIM +2 PTS (STREAK MET)
             </button>
             
-            <button onclick="startScanner()" class="btn btn-red btn-scan">
+            <button onclick="startScanner()" class="btn btn-red btn-scan" style="margin-top: 15px;">
                 <i class="fas fa-crosshairs"></i> SYNC TERMINAL
             </button>
             
-            <button onclick="handleLogout()" class="btn btn-logout">TERMINATE SESSION</button>
+            <button onclick="handleLogout()" class="btn btn-logout" style="margin-top: 10px;">TERMINATE SESSION</button>
         </div>
     </div>
 
