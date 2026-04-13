@@ -68,79 +68,45 @@ function toggleAuth() {
 }
 
 async function handleAuth() {
-    // Grab the inputs from the UI
-    const gamerTag = document.getElementById('gamerTagInput') ? document.getElementById('gamerTagInput').value.trim() : "";
-    const password = document.getElementById('passwordInput').value;
+    const gamerTag = document.getElementById('gamerTagInput').value.trim();
     const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
     const msgEl = document.getElementById('authMsg');
-    const authBtn = document.getElementById('authBtn');
 
-    if (!email || !password || (isRegisterMode && !gamerTag)) {
-        msgEl.innerText = "ERROR: ALL FIELDS REQUIRED.";
-        msgEl.style.color = "#EF4444";
+    // 1. Create the Secure Account
+    const { data, error } = await db.auth.signUp({
+        email: email,
+        password: password
+    });
+
+    if (error) {
+        msgEl.innerText = "AUTH ERROR: " + error.message.toUpperCase();
         return;
     }
 
-    // DEBOUNCE FIX: Disable button so they can't double-click
-    authBtn.disabled = true;
-    authBtn.innerText = "TRANSMITTING...";
-    msgEl.innerText = "ESTABLISHING CONNECTION...";
-    msgEl.style.color = "#9CA3AF";
-
-    if (isRegisterMode) {
-        // --- REGISTRATION FLOW ---
-        const { data, error } = await db.auth.signUp({
-            email: email,
-            password: password
-        });
-
-        if (error) {
-            msgEl.innerText = "ERROR: " + error.message.toUpperCase();
-            msgEl.style.color = "#EF4444";
-            resetAuthButton();
-            return;
-        }
-
-        // If Auth succeeds, create their Profile in the database
-        if (data.user) {
-            const { error: profileError } = await db.from('user_profiles').insert([
+    // 2. Connect Auth to Database (Profile Table)
+    if (data.user) {
+        const { error: profileError } = await db
+            .from('user_profiles')
+            .insert([
                 { 
-                    user_id: data.user.id, 
+                    user_id: data.user.id, // This links the account to the profile
                     email: email, 
-                    nickname: gamerTag,
+                    nickname: gamerTag, 
                     total_points: 0 
                 }
             ]);
 
-            if (profileError) {
-                msgEl.innerText = "ERROR SAVING PROFILE DATA.";
-                msgEl.style.color = "#EF4444";
-                resetAuthButton();
-            } else {
-                currentUserEmail = email;
-                currentUserId = data.user.id;
-                refreshWalletDisplay();
-                navigateTo('wallet');
-                resetAuthButton();
-            }
-        }
-    } else {
-        // --- LOGIN FLOW ---
-        const { data, error } = await db.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-
-        if (error) {
-            msgEl.innerText = "ERROR: " + error.message.toUpperCase();
-            msgEl.style.color = "#EF4444";
-            resetAuthButton();
+        if (profileError) {
+            msgEl.innerText = "DB CONNECTION ERROR: " + profileError.message;
         } else {
+            msgEl.innerText = "REGISTRATION SUCCESSFUL!";
+            msgEl.style.color = "#10B981";
+            
+            // Log them in and go to wallet
             currentUserEmail = email;
-            currentUserId = data.user.id;
-            refreshWalletDisplay();
             navigateTo('wallet');
-            resetAuthButton();
+            refreshWalletDisplay();
         }
     }
 }
