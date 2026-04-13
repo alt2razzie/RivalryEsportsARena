@@ -86,16 +86,14 @@ async function handleAuth() {
 
     // 2. Connect Auth to Database (Profile Table)
     if (data.user) {
-        const { error: profileError } = await db
-            .from('user_profiles')
-            .insert([
-                { 
-                    user_id: data.user.id, // This links the account to the profile
-                    email: email, 
-                    nickname: gamerTag, 
-                    total_points: 0 
-                }
-            ]);
+        const { error: profileError } = await db.from('user_profiles').insert([
+    { 
+        user_id: data.user.id, // Check if your table uses 'user_id' or just 'id'
+        email: email, 
+        nickname: gamerTag,
+        total_points: 0 
+    }
+]);
 
         if (profileError) {
             msgEl.innerText = "DB CONNECTION ERROR: " + profileError.message;
