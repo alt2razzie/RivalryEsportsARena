@@ -1,11 +1,7 @@
 
-
-
-// ==========================================
-// 1. SUPABASE CONFIGURATION
-// ==========================================
 const SUPABASE_URL = 'https://fzsrmnexarqrlaawnhmw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6c3JtbmV4YXJxcmxhYXduaG13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTc3NjAsImV4cCI6MjA5MTA3Mzc2MH0.VMN_srt8MBpQBq4F3SlTZJrnubrERF4RIGHG-Qe3dRQ'; // Replace with your actual Anon Key
+// ==========================================
 
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -14,7 +10,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ==========================================
 let currentUserEmail = ""; 
 let currentUserId = "";
-let tempGamerTag = ""; // Holds the tag securely while we wait for OTP
+let tempGamerTag = ""; 
 let html5QrcodeScanner = null;
 let isRegisterMode = false; 
 
@@ -34,7 +30,7 @@ function navigateTo(viewName) {
 }
 
 // ==========================================
-// 4. INITIALIZATION (Check for Active Session)
+// 4. INITIALIZATION (Check if already logged in)
 // ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await db.auth.getSession();
@@ -44,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         refreshWalletDisplay(); 
         navigateTo('wallet');
     } else {
-        navigateTo('auth'); 
+        navigateTo('home'); 
     }
 });
 
@@ -63,10 +59,9 @@ function toggleAuth() {
 }
 
 async function handleAuth() {
-    // 🚨 THIS IS THE FIX: Explicitly grabbing values by ID 🚨
     const tag = document.getElementById('gamerTagInput') ? document.getElementById('gamerTagInput').value.trim() : "";
-    const password = document.getElementById('passwordInput').value;
     const email = document.getElementById('emailInput').value.trim();
+    const password = document.getElementById('passwordInput').value;
     
     const msgEl = document.getElementById('authMsg');
     const authBtn = document.getElementById('authBtn');
@@ -83,7 +78,7 @@ async function handleAuth() {
     msgEl.style.color = "#9CA3AF";
 
     if (isRegisterMode) {
-        // --- PHASE 1: REGISTRATION ---
+        // --- SECURE REGISTRATION FLOW ---
         tempGamerTag = tag;
         currentUserEmail = email;
 
@@ -94,14 +89,13 @@ async function handleAuth() {
             msgEl.style.color = "#EF4444";
             resetAuthButton();
         } else {
-            // Success! Supabase just emailed the code. Move to OTP screen.
             navigateTo('otp');
             document.getElementById('otpMsg').innerText = "CODE SENT TO: " + email.toUpperCase();
             document.getElementById('otpMsg').style.color = "#10B981";
             resetAuthButton();
         }
     } else {
-        // --- STANDARD LOGIN ---
+        // --- LOGIN FLOW ---
         const { data, error } = await db.auth.signInWithPassword({ email: email, password: password });
 
         if (error) {
@@ -124,7 +118,6 @@ function resetAuthButton() {
     authBtn.innerText = isRegisterMode ? "CREATE PROFILE" : "INITIALIZE";
 }
 
-// --- PHASE 2: VERIFY OTP ---
 async function verifyOTP() {
     const code = document.getElementById('otpCode').value.trim();
     const msgEl = document.getElementById('otpMsg');
@@ -132,40 +125,28 @@ async function verifyOTP() {
     msgEl.innerText = "VERIFYING...";
     msgEl.style.color = "#9CA3AF";
 
-    const { data, error } = await db.auth.verifyOtp({
-        email: currentUserEmail,
-        token: code,
-        type: 'signup'
-    });
+    const { data, error } = await db.auth.verifyOtp({ email: currentUserEmail, token: code, type: 'signup' });
 
     if (error) {
         msgEl.innerText = "ERROR: INVALID OR EXPIRED CODE.";
         msgEl.style.color = "#EF4444";
     } else {
-        // Phase 2 Success! Now we execute Phase 3.
         currentUserId = data.user.id;
         executeProfileSave(data.user.id);
     }
 }
 
-// --- PHASE 3: SAVE GAMER TAG TO DATABASE ---
 async function executeProfileSave(uid) {
     const msgEl = document.getElementById('otpMsg');
     msgEl.innerText = "CREATING PROFILE...";
 
     const { error: profileError } = await db.from('user_profiles').insert([
-        { 
-            user_id: uid, 
-            email: currentUserEmail, 
-            nickname: tempGamerTag,
-            total_points: 0 
-        }
+        { user_id: uid, email: currentUserEmail, nickname: tempGamerTag, total_points: 0, potions: 0 }
     ]);
 
     if (profileError) {
         console.error("Profile Error:", profileError);
-        // If it fails (e.g. duplicate name), they are still logged in, so send them to wallet
-        navigateTo('wallet');
+        navigateTo('wallet'); // If it fails, they are still logged in, send to wallet
     } else {
         refreshWalletDisplay();
         navigateTo('wallet');
@@ -177,11 +158,11 @@ async function handleLogout() {
     currentUserEmail = "";
     currentUserId = "";
     tempGamerTag = "";
-    navigateTo('auth');
+    navigateTo('home');
 }
 
 // ==========================================
-// 6. WALLET & UI DISPLAY
+// 6. WALLET UI & POTION INVENTORY DISPLAY
 // ==========================================
 async function refreshWalletDisplay() {
     if (!currentUserEmail) return;
@@ -189,25 +170,42 @@ async function refreshWalletDisplay() {
     const { data, error } = await db.from('user_profiles').select('*').eq('email', currentUserEmail).single();
     
     if (data) {
-        const ptsEl = document.getElementById('valPoints');
-        if (ptsEl) ptsEl.innerText = data.total_points.toFixed(1);
+        // Update Points and PHP Value
+        document.getElementById('valPoints').innerText = data.total_points.toFixed(1);
+        document.getElementById('valPhp').innerText = (data.total_points * 4).toFixed(2);
         
-        const phpEl = document.getElementById('valPhp');
-        if (phpEl) phpEl.innerText = (data.total_points * 4).toFixed(2); // Example conversion
-        
+        // Update Gamer Tag
         const refEl = document.getElementById('myRefCode');
         if (refEl && data.nickname) refEl.innerText = data.nickname.toUpperCase();
+
+        // 🧪 UPDATE POTION INVENTORY UI
+        const potionEl = document.getElementById('potionCount');
+        if (potionEl) potionEl.innerText = `🧪 ${data.potions}x BOOST POTIONS`;
+
+        // 🧪 SHOW/HIDE THE POTION CHECKBOX IN THE SCANNER
+        const potionSection = document.getElementById('potionSection');
+        if (potionSection) {
+            if (data.potions > 0) {
+                potionSection.style.display = 'block'; // Reveal the potion drink option
+            } else {
+                potionSection.style.display = 'none'; // Hide it if they are out of potions
+                document.getElementById('usePotionToggle').checked = false; // Uncheck it automatically
+            }
+        }
     }
 }
 
 // ==========================================
-// 7. QR SCANNER & RPC SYNC
+// 7. QR SCANNER & POTION SYNC LOGIC
 // ==========================================
 function startScanner() {
     navigateTo('scanner');
     const msgEl = document.getElementById('scanMsg');
     msgEl.innerText = "ALIGN QR WITHIN FRAME";
     msgEl.style.color = "#9CA3AF";
+
+    // Uncheck the potion box by default every time they open the scanner
+    document.getElementById('usePotionToggle').checked = false; 
 
     if (!html5QrcodeScanner) html5QrcodeScanner = new Html5Qrcode("reader");
 
@@ -244,13 +242,19 @@ async function syncTerminal(hashToken) {
     if (!currentUserEmail) { navigateTo('auth'); return; }
 
     const msgEl = document.getElementById('scanMsg');
+    
+    // 🧪 Check if the player decided to drink the potion!
+    const isPotionChecked = document.getElementById('usePotionToggle').checked; 
+
     msgEl.innerText = "ESTABLISHING SECURE LINK...";
     msgEl.style.color = "#9CA3AF";
 
     try {
+        // Send the hash AND the potion decision to the Supabase database
         const { data: earnedPoints, error } = await db.rpc('claim_session_token', {
             p_user_email: currentUserEmail,
-            p_token: hashToken
+            p_token: hashToken,
+            p_use_potion: isPotionChecked
         });
 
         if (error) {
@@ -259,10 +263,18 @@ async function syncTerminal(hashToken) {
             return;
         }
 
-        msgEl.innerText = `SYNC COMPLETE: +${earnedPoints} PTS SECURED.`;
-        msgEl.style.color = "#10B981";
+        // Show a special neon message if the potion worked
+        if (isPotionChecked) {
+            msgEl.innerText = `🧪 1.5x BOOST ACTIVE! +${earnedPoints} PTS SECURED.`;
+            document.getElementById('usePotionToggle').checked = false; // Reset the box
+        } else {
+            msgEl.innerText = `SYNC COMPLETE: +${earnedPoints} PTS SECURED.`;
+        }
         
-        document.getElementById('manualTokenInput').value = "";
+        msgEl.style.color = "#10B981";
+        document.getElementById('manualTokenInput').value = ""; // Clear manual box
+        
+        // Update the wallet numbers and send them back to the dashboard
         refreshWalletDisplay();
         setTimeout(() => { navigateTo('wallet'); }, 2500);
 
