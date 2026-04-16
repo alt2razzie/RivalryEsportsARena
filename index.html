@@ -6,13 +6,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RVL Brill AI">
     <link rel="apple-touch-icon" href="icon-192.png">
-
-    <script>
-      // Register Service Worker for PWA (Mobile App Feel)
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('service-worker.js');
-      }
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RVL Brill AI - Rivalry Esports Arena</title>
@@ -36,7 +29,6 @@
             <p class="subtitle">POINTS WALLET</p>
             <div class="btn-group">
                 <button onclick="navigateTo('auth')" class="btn btn-red">ACCESS PROFILE</button>
-                <button onclick="loadLeaderboard()" class="btn btn-outline">🏆 RANKINGS</button>
             </div>
         </div>
     </div>
@@ -47,21 +39,16 @@
             <div id="authMsg" class="msg"></div>
             
             <input type="text" id="gamerTagInput" placeholder="GAMER TAG" style="display: none;">
-            
             <input type="email" id="emailInput" placeholder="EMAIL ADDRESS">
             <input type="password" id="passwordInput" placeholder="PASSWORD">
             
-            <input type="text" id="referralInput" placeholder="REFERRAL CODE (OPTIONAL)" style="display: none;">
-            
-            <p id="forgotLink" style="text-align: right; margin-top: 5px;">
-                <span onclick="navigateTo('forgot')" class="link-muted" style="cursor: pointer;">Forgot Password?</span>
-            </p>
+            <p style="text-align: right; margin-top: 5px;"><span class="link-muted" style="cursor: pointer;">Forgot Password?</span></p>
 
             <button onclick="handleAuth()" id="authBtn" class="btn btn-red" style="margin-top: 15px;">INITIALIZE</button>
             
             <p class="toggle-text">
                 <span id="toggleText">New to the arena?</span> 
-                <span onclick="toggleAuth(); document.getElementById('referralInput').style.display = isRegisterMode ? 'block' : 'none';" class="link-red" style="cursor: pointer;">Register Here</span>
+                <span onclick="toggleAuth();" class="link-red" style="cursor: pointer;">Register Here</span>
             </p>
             <button onclick="navigateTo('home')" class="btn btn-outline">BACK TO SYSTEM</button>
         </div>
@@ -78,41 +65,15 @@
         </div>
     </div>
 
-    <div id="forgot-view" class="view">
-        <div class="card glass-panel">
-            <h2 class="neon-text">RECOVERY</h2>
-            <div id="forgotMsg" class="msg"></div>
-            
-            <input type="email" id="forgotEmail" placeholder="EMAIL ADDRESS">
-            <button onclick="sendResetCode()" class="btn btn-red">SEND RESET CODE</button>
-            
-            <div id="resetCodeSection" style="display: none; margin-top: 20px; border-top: 1px solid #334155; padding-top: 20px;">
-                <input type="text" id="resetOtpCode" placeholder="6-DIGIT CODE" style="text-align: center; letter-spacing: 2px;" maxlength="6">
-                <input type="password" id="newPassword" placeholder="NEW PASSWORD">
-                <button onclick="submitNewPassword()" class="btn btn-outline" style="margin-top: 10px; border-color: var(--success); color: var(--success);">UPDATE PASSWORD</button>
-            </div>
-            <button onclick="navigateTo('auth')" class="btn btn-outline" style="margin-top: 15px;">BACK TO LOGIN</button>
-        </div>
-    </div>
-
-    <div id="leaderboard-view" class="view">
-        <div class="card glass-panel" style="width: 100%; max-width: 500px;">
-            <h2 class="neon-text">TOP RANKINGS</h2>
-            <p style="color:#94A3B8; font-size: 0.9rem; margin-bottom: 15px;">Top 3 players weekly receive a 1.5x Boost Potion.</p>
-            <div id="lbContainer" class="leaderboard-container"></div>
-            <button onclick="navigateTo('home')" class="btn btn-outline" style="margin-top: 20px;">BACK TO SYSTEM</button>
-        </div>
-    </div>
-
     <div id="scanner-view" class="view">
         <div class="card glass-panel">
             <h2 class="neon-text">DATA EXTRACTION</h2>
             
-            <div id="potionSection" class="potion-box" style="display:none;">
-                <p class="potion-title">🧪 1.5x BOOST POTION AVAILABLE</p>
-                <label class="potion-label">
-                    <input type="checkbox" id="usePotionToggle" class="potion-checkbox">
-                    <span>DRINK POTION FOR THIS SESSION</span>
+            <div id="potionSection" class="potion-box" style="display:none; margin-bottom:15px; padding: 15px; border: 1px solid #A855F7; border-radius: 8px; background: rgba(168, 85, 247, 0.1);">
+                <p class="potion-title" style="color: #A855F7; font-weight: bold; margin-bottom: 10px;">🧪 1.5x BOOST POTION AVAILABLE</p>
+                <label style="display:flex; align-items:center; justify-content:center; gap:10px; cursor: pointer;">
+                    <input type="checkbox" id="usePotionToggle" style="transform: scale(1.5);">
+                    <span style="color: white; font-weight: 600;">DRINK POTION FOR THIS SESSION</span>
                 </label>
             </div>
 
@@ -146,18 +107,10 @@
                     <p id="myRefCode" class="stat-value">------</p>
                 </div>
                 <div class="stat-box">
-                    <p class="stat-title">DAILY STREAK</p>
-                    <p id="streakCount" class="stat-value" style="color: var(--red-primary);">0 DAYS</p>
-                </div>
-                <div class="stat-box" style="grid-column: span 2;">
                     <p class="stat-title">INVENTORY</p>
                     <p id="potionCount" class="stat-value" style="color: #A855F7;">🧪 0x BOOST POTIONS</p>
                 </div>
             </div>
-
-            <button id="streakBtn" onclick="claimStreak()" class="btn btn-streak" style="display: none; margin-top: 15px;">
-                🎁 CLAIM +2 PTS (STREAK MET)
-            </button>
             
             <button onclick="startScanner()" class="btn btn-red btn-scan" style="margin-top: 15px;">
                 <i class="fas fa-crosshairs"></i> SYNC TERMINAL
