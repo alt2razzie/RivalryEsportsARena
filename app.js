@@ -179,8 +179,13 @@ async function refreshWalletDisplay() {
         if (refEl && data.nickname) refEl.innerText = data.nickname.toUpperCase();
 
         // 🧪 UPDATE POTION INVENTORY UI
+        // Find this line inside refreshWalletDisplay()
+        const potionCount = data.potions || 0; // If potions is undefined, use 0
         const potionEl = document.getElementById('potionCount');
-        if (potionEl) potionEl.innerText = `🧪 ${data.potions}x BOOST POTIONS`;
+
+        if (potionEl) {
+            potionEl.innerText = `🧪 ${potionCount}x BOOST POTIONS`;
+        }
 
         // 🧪 SHOW/HIDE THE POTION CHECKBOX IN THE SCANNER
         const potionSection = document.getElementById('potionSection');
